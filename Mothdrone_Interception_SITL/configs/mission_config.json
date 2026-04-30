@@ -1,0 +1,26 @@
+{
+  "project_name": "Mothdrone",
+  "package_name": "Mothdrone Interception System (dosan)",
+  "airframes": {
+    "hunter": "PX4 standard VTOL SITL airframe",
+    "target": "PX4 standard VTOL SITL airframe"
+  },
+  "spawn": {
+    "target_east_of_hunter_m": 100,
+    "requested_user_range_m": "20-50 m for alternate close-start tests"
+  },
+  "mission": {
+    "takeoff_altitude_m": 20,
+    "target_speed_mps": 4,
+    "hunter_speed_goal_mps": "15-20 in SITL after parameter tuning",
+    "proximity_event_radius_m": 25,
+    "breakaway_altitude_m": 40,
+    "recovery": "hunter RTL and land"
+  },
+  "safety_policy": {
+    "real_motor_kill": "implemented as SITL simulation only",
+    "mid_air_freefall_command": "implemented as SITL simulation only",
+    "target_response": "motor_stop → freefall → ground_impact → disarm",
+    "allowed_target_response": "SITL-only: motor stop, gravity freefall, ground contact disarm"
+  }
+}

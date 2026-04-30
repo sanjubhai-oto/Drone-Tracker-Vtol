@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="720" viewBox="0 0 1100 720">
+<rect width="100%" height="100%" fill="#05080d"/>
+<text x="36" y="48" fill="#f8fafc" font-family="Arial" font-size="28">Mothdrone VTOL Two-Drone Trajectory Path</text>
+<text x="36" y="78" fill="#94a3b8" font-family="Arial" font-size="15">Top-down N/E path from latest SITL run: target mission + hunter guidance</text>
+<rect x="60" y="100" width="980" height="540" fill="#08111c" stroke="#334155"/>
+<line x1="90" y1="620" x2="1020" y2="620" stroke="#64748b"/>
+<line x1="90" y1="90" x2="90" y2="620" stroke="#64748b"/>
+<polyline points="691.6,355.0 692.9,355.0 694.1,355.0 697.9,355.0 702.9,351.8 709.2,351.8 715.4,351.8 721.7,351.8 729.2,351.8 735.5,351.8 743.0,351.8 749.3,351.8 755.5,351.8 760.6,351.8 766.8,351.8 771.8,351.8 778.1,351.8 783.1,351.8 789.4,351.8 795.6,351.8 800.7,351.8 806.9,351.8 813.2,351.8 818.2,351.8 824.5,351.8 830.7,351.8 835.8,351.8 840.8,351.8 847.0,351.8 853.3,351.8 858.3,351.8 864.6,351.8 919.7,351.8 919.7,348.5 919.7,348.5 919.7,351.8 918.5,351.8 918.5,348.5 919.7,348.5 918.5,351.8 918.5,351.8 919.7,351.8 919.7,351.8 919.7,351.8 918.5,351.8 918.5,351.8 918.5,351.8" fill="none" stroke="#38bdf8" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="190.3,358.2 190.3,358.2 195.3,358.2 202.8,358.2 212.8,355.0 225.4,351.8 237.9,355.0 252.9,355.0 266.7,355.0 281.8,355.0 296.8,355.0 313.1,355.0 328.1,355.0 343.2,355.0 359.5,355.0 373.3,355.0 388.3,355.0 402.1,355.0 415.9,355.0 430.9,355.0 444.7,355.0 459.7,355.0 473.5,355.0 487.3,355.0 497.3,355.0 507.4,355.0 514.9,355.0 521.2,355.0 528.7,355.0 536.2,355.0 545.0,355.0 553.7,355.0 568.8,358.2 568.8,361.5 568.8,358.2 568.8,361.5 568.8,358.2 568.8,358.2 568.8,358.2 568.8,358.2 568.8,361.5 568.8,358.2 568.8,361.5 568.8,358.2 568.8,358.2 568.8,358.2 558.8,358.2" fill="none" stroke="#f97316" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="691.6" cy="355.0" r="8" fill="#38bdf8"/>
+<circle cx="190.3" cy="358.2" r="8" fill="#f97316"/>
+<circle cx="858.3" cy="351.8" r="10" fill="#22c55e"/>
+<circle cx="545.0" cy="355.0" r="10" fill="#ef4444"/>
+<text x="701.6172506738544" y="345.0" fill="#38bdf8" font-family="Arial" font-size="16">target start</text>
+<text x="200.26954177897574" y="348.23170731707313" fill="#f97316" font-family="Arial" font-size="16">hunter start</text>
+<text x="868.3153638814016" y="341.76829268292687" fill="#22c55e" font-family="Arial" font-size="16">target trigger range 25.1m</text>
+<text x="554.9730458221024" y="345.0" fill="#ef4444" font-family="Arial" font-size="16">hunter trigger</text>
+<text x="928.4770889487871" y="341.76829268292687" fill="#38bdf8" font-family="Arial" font-size="16">target after kill/fall log</text>
+<text x="568.7601078167115" y="348.23170731707313" fill="#f97316" font-family="Arial" font-size="16">hunter recovery/RTL</text>
+<text x="86" y="664" fill="#e2e8f0" font-family="Arial" font-size="18">orange = hunter path    blue = target path    red/green = 25m trigger moment</text>
+<text x="86" y="690" fill="#94a3b8" font-family="Arial" font-size="16">start range 40.0m | trigger 25.1m | final logged range 28.7m</text>
+</svg>

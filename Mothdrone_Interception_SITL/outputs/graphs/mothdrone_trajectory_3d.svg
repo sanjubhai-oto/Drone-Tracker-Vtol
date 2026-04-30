@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="820" viewBox="0 0 1280 820">
+<rect width="100%" height="100%" fill="#05080d"/>
+<text x="34.0" y="48.0" fill="#f8fafc" font-family="Arial" font-size="30">Mothdrone VTOL 3D Trajectory</text>
+<text x="34.0" y="78.0" fill="#94a3b8" font-family="Arial" font-size="16">Perspective plot: ground position plus altitude. Orange=hunter, Blue=target.</text>
+<g stroke="#1e293b" stroke-width="1">
+<line x1="397.0" y1="425.3" x2="107.0" y2="595.3"/>
+<line x1="497.0" y1="441.3" x2="207.0" y2="611.3"/>
+<line x1="597.0" y1="457.3" x2="307.0" y2="627.3"/>
+<line x1="697.0" y1="473.3" x2="407.0" y2="643.3"/>
+<line x1="797.0" y1="489.3" x2="507.0" y2="659.3"/>
+<line x1="897.0" y1="505.3" x2="607.0" y2="675.3"/>
+<line x1="997.0" y1="521.3" x2="707.0" y2="691.3"/>
+<line x1="1097.0" y1="537.3" x2="807.0" y2="707.3"/>
+<line x1="1197.0" y1="553.3" x2="907.0" y2="723.3"/>
+<line x1="397.0" y1="425.3" x2="1197.0" y2="553.3"/>
+<line x1="339.0" y1="459.3" x2="1139.0" y2="587.3"/>
+<line x1="281.0" y1="493.3" x2="1081.0" y2="621.3"/>
+<line x1="223.0" y1="527.3" x2="1023.0" y2="655.3"/>
+<line x1="165.0" y1="561.3" x2="965.0" y2="689.3"/>
+<line x1="107.0" y1="595.3" x2="907.0" y2="723.3"/>
+</g>
+<line x1="618.0" y1="590.5" x2="618.0" y2="293.0" stroke="#f97316" stroke-width="2" stroke-dasharray="6 6"/>
+<line x1="903.8" y1="637.1" x2="903.8" y2="637.1" stroke="#38bdf8" stroke-width="2" stroke-dasharray="6 6"/>
+<polyline points="723.4,501.8 724.4,501.5 725.4,501.2 728.4,502.1 731.8,503.1 736.8,503.9 741.8,504.7 746.8,505.5 752.8,506.5 757.8,507.3 763.8,508.2 768.8,509.0 773.8,509.8 777.8,510.5 782.8,511.3 786.8,511.9 791.8,512.7 795.8,513.4 800.8,514.2 805.8,515.0 809.8,515.6 814.8,516.4 819.8,517.2 823.8,517.8 828.8,518.6 833.8,519.4 837.8,520.1 841.8,520.7 846.8,521.0 851.8,521.8 855.8,522.5 860.8,523.3 904.8,637.3 904.2,637.6 904.2,637.6 904.8,636.8 903.8,636.6 903.2,637.0 904.2,637.1 903.8,636.6 903.8,636.6 904.8,636.8 904.8,637.3 904.8,637.3 903.8,637.1 903.8,637.1 903.8,637.1" fill="none" stroke="#38bdf8" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="324.0,438.5 324.0,437.0 328.0,437.1 334.0,438.1 341.4,439.7 350.8,441.7 361.4,442.9 373.4,445.3 384.4,447.1 396.4,449.0 408.4,451.4 421.4,453.5 433.4,455.9 445.4,457.9 458.4,459.9 469.4,461.7 481.4,464.1 492.4,465.9 503.4,467.6 515.4,469.6 526.4,471.8 538.4,473.7 549.4,475.5 560.4,476.8 568.4,478.0 576.4,479.3 582.4,480.3 587.4,481.1 593.4,482.5 599.4,483.5 606.4,485.1 613.4,486.2 626.0,449.8 626.6,441.0 626.0,426.8 626.6,412.0 626.0,397.3 626.0,382.3 626.0,367.8 626.0,352.8 626.6,337.5 626.0,322.8 626.6,310.0 626.0,302.8 626.0,298.3 626.0,295.8 618.0,293.0" fill="none" stroke="#f97316" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="723.4" cy="501.8" r="8" fill="#38bdf8"/>
+<circle cx="324.0" cy="438.5" r="8" fill="#f97316"/>
+<circle cx="860.8" cy="523.3" r="11" fill="#22c55e"/>
+<circle cx="613.4" cy="486.2" r="11" fill="#ef4444"/>
+<circle cx="903.8" cy="637.1" r="8" fill="#7dd3fc"/>
+<circle cx="618.0" cy="293.0" r="8" fill="#fdba74"/>
+<text x="735.4" y="489.8" fill="#38bdf8" font-family="Arial" font-size="15">target start</text>
+<text x="336.0" y="426.5" fill="#f97316" font-family="Arial" font-size="15">hunter start</text>
+<text x="872.8" y="511.3" fill="#22c55e" font-family="Arial" font-size="15">trigger 24.8m</text>
+<text x="915.8" y="625.1" fill="#7dd3fc" font-family="Arial" font-size="15">target ground/disarmed</text>
+<text x="630.0" y="281.0" fill="#fdba74" font-family="Arial" font-size="15">hunter recovery/RTL</text>
+<text x="44.0" y="744.0" fill="#e2e8f0" font-family="Arial" font-size="18">start 40.0m | trigger 24.8m | final logged 28.7m</text>
+<text x="44.0" y="774.0" fill="#e2e8f0" font-family="Arial" font-size="18">hunter altitude 21.0->59.5m | target altitude 21.2->0.0m</text>
+</svg>

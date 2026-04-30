@@ -1,0 +1,11 @@
+# Mothdrone Interception System - Python Dependencies
+
+# MAVSDK for PX4 vehicle control
+mavsdk>=1.4.0
+
+# MAVLink for telemetry forwarding and low-level communication
+pymavlink>=2.4.0
+
+# Optional but recommended
+# numpy>=1.21.0
+# matplotlib>=3.5.0  # For telemetry plotting

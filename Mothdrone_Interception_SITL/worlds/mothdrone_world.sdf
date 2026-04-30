@@ -1,0 +1,71 @@
+<?xml version="1.0" ?>
+<sdf version="1.10">
+  <world name="mothdrone_world">
+    <physics type="ignore">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+    <plugin
+      filename="gz-sim-physics-system"
+      name="gz::sim::systems::Physics">
+    </plugin>
+    <plugin
+      filename="gz-sim-scene-broadcaster-system"
+      name="gz::sim::systems::SceneBroadcaster">
+    </plugin>
+    <plugin
+      filename="gz-sim-contact-system"
+      name="gz::sim::systems::Contact">
+    </plugin>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <intensity>1.0</intensity>
+      <direction>-0.5 0.1 -0.9</direction>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+    </light>
+
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>1000 1000</size>
+            </plane>
+          </geometry>
+        </collision>
+        <visual name="visual">
+          <geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>1000 1000</size>
+            </plane>
+          </geometry>
+          <material>
+            <ambient>0.2 0.2 0.2 1</ambient>
+            <diffuse>0.3 0.3 0.3 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- Hunter VTOL spawn position -->
+    <include>
+      <uri>model://standard_vtol</uri>
+      <pose>0 0 0.1 0 0 0</pose>
+      <name>hunter_vtol</name>
+    </include>
+
+    <!-- Target VTOL spawn position (100m East) -->
+    <include>
+      <uri>model://standard_vtol</uri>
+      <pose>100 0 0.1 0 0 0</pose>
+      <name>target_vtol</name>
+    </include>
+
+  </world>
+</sdf>

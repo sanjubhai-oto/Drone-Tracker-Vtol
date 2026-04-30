@@ -1,71 +1,105 @@
-# PX4-Sim-Starter
-A complete starter guide for setting up PX4, configuring Gazebo and jMAVSim simulations, adding GZ models and worlds, integrating ROS Humble.
-### We recommend using Ubuntu 22.04 LTS.
-If you are currently on Windows, we strongly suggest setting up a dual-boot system for the best development experience. Here is a helpful YouTube guide on how to dual-boot Windows and Ubuntu. 
+# PX4 Sim Starter
 
-[How to Dual Boot Windows 11 & Ubuntu Easily!](https://youtu.be/mXyN1aJYefc?si=7d10vRRJcpxSqT_2)
+Starter workspace for PX4 SITL, Gazebo, ROS 2, and multi-vehicle simulation examples.
 
-If you're using a Mac, it's perfectly fine to run Ubuntu in a virtual machine. We recommend using UTM. Here is a helpful YouTube guide on how to set up an Ubuntu 22.04 VM:
+The repository now includes a complete two-VTOL Mothdrone SITL package with:
 
-[How to Install Ubuntu Linux VM on a Mac (M1 / M2 / M3 / M4 / M5) with UTM!](https://www.youtube.com/watch?v=1PL-0-5BNXs)
+- PX4/Gazebo standard VTOL launch
+- two-airframe hunter + target control
+- full offboard takeoff
+- target mission cruise
+- hunter guidance toward target telemetry
+- 25 m proximity trigger
+- SITL-only target motor-stop/kill event
+- hunter-only breakaway and RTL
+- telemetry logging
+- static and live 3D trajectory visualisation
 
----
+## Repository Layout
 
-## 📦 What’s Inside This Repository
+| Path | Purpose |
+| --- | --- |
+| `PX4/` | PX4 setup notes |
+| `Gazebo/` | Gazebo/GZ setup notes |
+| `ROS2Humbel/` | ROS 2 Humble notes |
+| `Mothdrone_Interception_SITL/` | Full two-VTOL SITL demo package |
 
-### 1. PX4 Installation Guide
-- Install PX4 from source
-- 
----
+## Mothdrone Interception SITL
 
-### 2. Running PX4 Simulations
+Go to:
 
-#### ✔ Gazebo (GZ) Simulation
-- Launching PX4 with the new Gazebo (Gazebo Garden / GZ Sim)  
-- Running multirotor simulations  
-- Loading custom GZ models and environments  
+```bash
+cd Mothdrone_Interception_SITL
+```
 
-#### ✔ jMAVSim Simulation
-- Lightweight single-vehicle simulation  
-- Connecting QGroundControl  
-- Ideal for simple debugging or CI workflows
+Main files:
 
----
+| File | Purpose |
+| --- | --- |
+| `launch_mothdrone.py` | Starts two PX4 standard VTOL SITL vehicles and runs mission |
+| `code/mothdrone_controller.py` | Offboard takeoff, target mission, hunter guidance, trigger, target kill, hunter RTL |
+| `code/live_trajectory_server.py` | Live browser 3D trajectory graph |
+| `outputs/graphs/mothdrone_trajectory_3d.svg` | Static 3D trajectory image |
+| `outputs/graphs/mothdrone_mission_graph.svg` | Path/range/altitude graph |
+| `outputs/test_reports/latest.md` | Latest verification report |
+| `docs/GUIDANCE_STATE_MACHINE.md` | State machine and control logic |
 
-### 3. Gazebo Models & Worlds
-- How to create your own models and worlds  
-- Importing community models  
-- Using SDF/URDF with PX4  
-- Notes on physics and rendering in GZ
+### Latest Verified Result
 
----
+From the included telemetry:
 
-### 4. ROS Humble Integration
-- Installing ROS Humble  
-- Setting up workspaces for PX4 + ROS    
-- Sending & receiving ROS topics
+- start range: `40.0 m`
+- trigger range: `24.8 m`
+- target after trigger: SITL kill accepted, altitude logged at `0.0 m`
+- hunter after trigger: climbed from `20.8 m` to `59.5 m`
+- recovery: target did not RTL; hunter alone performed breakaway/RTL
 
----
+### Run SITL
 
-### 5. GZ–ROS Bridge
-- Installing and configuring `ros_gz_bridge`  
-- Subscribing to GZ topics  
-- Visualizing data in RViz2  
-- Example bridge launch files
+Prerequisites:
 
----
+- PX4-Autopilot built at `~/PX4-Autopilot`
+- Gazebo Sim configured for PX4
+- Python with `mavsdk`
+- Optional: QGroundControl
 
-## 🎯 Goal of This Repository
+Run:
 
-This repository aims to serve as:
+```bash
+cd Mothdrone_Interception_SITL
+python3 -m pip install -r requirements.txt
+python3 launch_mothdrone.py
+```
 
-- A practical guide for PX4 beginners
-- A reference for PX4 + ROS + Gazebo workflows
-- A template to build your own simulation environment
-- A centralized and modern setup (no outdated scattered docs)
+On the original tested macOS machine:
 
----
+```bash
+/Users/sanju/.venvs/mothdrone/bin/python launch_mothdrone.py
+```
 
-## 📝 Contributions
-### Contributions are welcome — whether fixes, improvements, examples, or additional worlds/models.
-you make message me at asnb1212@gmail.com
+### Live 3D Trajectory
+
+Start this before or during SITL:
+
+```bash
+cd Mothdrone_Interception_SITL
+python3 code/live_trajectory_server.py
+```
+
+Open:
+
+```text
+http://127.0.0.1:8790/live_trajectory.html
+```
+
+The page refreshes from `mothdrone_telemetry.json` every 0.5 s. The controller writes telemetry during flight.
+
+## Safety Boundary
+
+The Mothdrone target motor-stop behavior is simulation-only. It is guarded in the launcher by:
+
+```text
+MOTHDRONE_SITL_TARGET_KILL=1
+```
+
+Do not use this as a real-aircraft motor-stop path.
