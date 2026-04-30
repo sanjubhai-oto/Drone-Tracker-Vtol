@@ -2,10 +2,11 @@
 
 Two-standard-VTOL PX4/Gazebo simulation for a Mothdrone-style demo:
 
-- target starts 40 m ahead of hunter
-- both VTOLs arm together and enter offboard
-- both climb by offboard velocity setpoints
-- target flies a simple offboard mission at 2 m/s
+- target starts 100 m ahead of hunter
+- target arms first
+- hunter arms only after target `armed=true` is detected
+- both VTOLs use offboard climb support until the altitude gate
+- target then flies an offboard path at 2 m/s
 - hunter listens to target telemetry and navigates toward it
 - at <= 25 m with vision-confirmation gate, hunter triggers the event
 - target receives a SITL-only motor-stop/kill command and falls/disarms
@@ -15,13 +16,15 @@ This package is for simulation only.
 
 ## Latest Verified SITL Result
 
-From `mothdrone_telemetry.json`:
+From the latest completed telemetry in `mothdrone_telemetry.json`:
 
-- start range: `40.0 m`
-- trigger range: `24.8 m`
+- start range: `99.9 m`
+- trigger range: `25.0 m`
 - trigger state: `proximity_event_confirmed`
+- target moved: `E=100.0 -> 155.2 m`, `N=0.0 -> 10.6 m`
+- hunter moved: `E=0.1 -> 127.5 m`
 - target after trigger: SITL kill accepted, target altitude logged at `0.0 m`
-- hunter recovery: climbed from `20.8 m` to `59.5 m`
+- hunter recovery: climbed from `21.5 m` to `59.6 m`
 - result: target did not RTL after trigger; hunter alone performed recovery/RTL
 
 Report:
@@ -33,6 +36,16 @@ Images:
 - `outputs/graphs/mothdrone_trajectory_3d.svg`
 - `outputs/graphs/mothdrone_trajectory_path.svg`
 - `outputs/graphs/mothdrone_mission_graph.svg`
+
+## Visual Result
+
+### 3D Trajectory
+
+![Mothdrone 3D trajectory](outputs/graphs/mothdrone_trajectory_3d.svg)
+
+### Mission Range And Altitude
+
+![Mothdrone mission graph](outputs/graphs/mothdrone_mission_graph.svg)
 
 ## Run Full SITL
 
@@ -86,9 +99,10 @@ The controller writes `mothdrone_telemetry.json` during flight, so the browser g
 | File | Purpose |
 | --- | --- |
 | `launch_mothdrone.py` | Starts two PX4 standard VTOL SITL vehicles and runs mission |
-| `code/mothdrone_controller.py` | Offboard takeoff, target mission, hunter guidance, event trigger, target kill, hunter RTL |
-| `code/live_trajectory_server.py` | Browser live trajectory graph |
+| `code/mothdrone_controller.py` | Hunter offboard guidance, target offboard path, event trigger, target kill, hunter RTL |
+| `code/live_trajectory_server.py` | Browser live 3D trajectory graph |
 | `code/plot_mission_results.py` | Static SVG/HTML graph generator |
+| `code/plot_trajectory_3d.py` | Static 3D trajectory SVG generator |
 | `docs/GUIDANCE_STATE_MACHINE.md` | Mission state machine |
 | `docs/ALGORITHM.md` | Algorithm explanation |
 | `worlds/` and `models/` | Gazebo/PX4 assets |

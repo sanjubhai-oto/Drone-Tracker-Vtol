@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-TARGET_START_EAST_M = 40.0
+TARGET_START_EAST_M = 100.0
 TARGET_CRUISE_EAST_MPS = 2.0
 HUNTER_MAX_SPEED_MPS = 5.0
 TAKEOFF_GATE_ALTITUDE_M = 20.0
@@ -231,7 +231,7 @@ class MothdroneController:
         self.event_triggered = False
         self.telemetry_log: list[dict] = []
         # PX4 local NED is relative to each vehicle's own home/spawn point.
-        # Gazebo spawn pose puts target 40m east of hunter, so convert both
+        # Gazebo spawn pose puts target 100m east of hunter, so convert both
         # telemetry streams into one shared hunter-world NED frame before guidance.
         self.hunter_origin_ned_m = (0.0, 0.0, 0.0)
         self.target_origin_ned_m = (0.0, TARGET_START_EAST_M, 0.0)
@@ -283,11 +283,12 @@ class MothdroneController:
             self.target.offboard.set_velocity_ned(VelocityNedYaw(0.0, 0.0, 0.0, 0.0)),
         )
 
-        print("[MISSION] Arming both VTOLs...")
-        await asyncio.gather(
-            self.hunter.action.arm(),
-            self.target.action.arm(),
-        )
+        print("[MISSION] Arming target first; hunter arms after target armed state is detected...")
+        await self.target.action.arm()
+        await self._wait_until_armed(self.target, "target", timeout_s=10.0)
+        print("[MISSION] Target armed detected -> arming hunter now")
+        await self.hunter.action.arm()
+        await self._wait_until_armed(self.hunter, "hunter", timeout_s=10.0)
 
         await asyncio.sleep(0.5)
 
@@ -366,6 +367,16 @@ class MothdroneController:
         except Exception as exc:
             print(f"[MISSION] {role} offboard start warning: {exc}")
 
+    async def _wait_until_armed(self, system: System, role: str, timeout_s: float) -> None:
+        deadline = time.monotonic() + timeout_s
+        async for armed in system.telemetry.armed():
+            if armed:
+                print(f"[MISSION] {role} armed=true")
+                return
+            if time.monotonic() >= deadline:
+                break
+        raise RuntimeError(f"{role} did not report armed state within {timeout_s:.1f}s")
+
     async def _wait_until_both_above_altitude(self, min_altitude_m: float, timeout_s: float) -> None:
         deadline = time.monotonic() + timeout_s
         while time.monotonic() < deadline:
@@ -387,6 +398,17 @@ class MothdroneController:
         raise RuntimeError(
             f"Altitude gate failed: hunter and target must both be above {min_altitude_m:.1f}m before guidance starts"
         )
+
+    @staticmethod
+    def _target_offboard_path_velocity(loop_count: int) -> tuple[float, float, float]:
+        """Simple target offboard path: east leg, diagonal leg, then mild zigzag."""
+        if loop_count < 60:
+            return 0.0, TARGET_CRUISE_EAST_MPS, 90.0
+        if loop_count < 120:
+            return 0.8, TARGET_CRUISE_EAST_MPS, 70.0
+        if loop_count < 180:
+            return -0.8, TARGET_CRUISE_EAST_MPS, 110.0
+        return 0.0, TARGET_CRUISE_EAST_MPS, 90.0
 
     async def get_telemetry(self, system: System, origin_ned_m: tuple[float, float, float]) -> VehicleState:
         """Get current vehicle state from telemetry."""
@@ -513,7 +535,7 @@ class MothdroneController:
         """Main interception loop."""
         print("[MISSION] Starting interception loop...")
         print(
-            f"[MISSION] Target starts {TARGET_START_EAST_M:.0f}m East, moves East at ~{TARGET_CRUISE_EAST_MPS:.0f} m/s; "
+            f"[MISSION] Target starts {TARGET_START_EAST_M:.0f}m East, runs offboard target path at ~{TARGET_CRUISE_EAST_MPS:.0f} m/s; "
             f"hunter pursuit capped at ~{HUNTER_MAX_SPEED_MPS:.0f} m/s"
         )
         print("[MISSION] Hunter pursuing with Proportional Navigation...")
@@ -530,10 +552,8 @@ class MothdroneController:
             )
         )
 
-        print("[MISSION] Hunter offboard already active from takeoff gate...")
-
-        print(f"[MISSION] Setting target velocity to {TARGET_CRUISE_EAST_MPS:.0f} m/s East...")
-        await self.target.offboard.set_velocity_ned(VelocityNedYaw(0.0, TARGET_CRUISE_EAST_MPS, 0.0, 90.0))
+        print("[MISSION] Both vehicles remain in offboard after takeoff gate...")
+        print("[TARGET] Target offboard path active; hunter listens and follows.")
 
         loop_count = 0
         while True:
@@ -557,6 +577,7 @@ class MothdroneController:
 
             # Get guidance command
             cmd = self.guidance.command(hunter_state, target_state, vision)
+            target_vn, target_ve, target_yaw_deg = self._target_offboard_path_velocity(loop_count)
 
             # Log telemetry
             log_entry = {
@@ -570,7 +591,7 @@ class MothdroneController:
                 "target_alt": round(target_state.altitude_m, 1),
                 "range_m": round(range_m, 1),
                 "mode": cmd.mode,
-                "mission_state": "proximity_trigger" if cmd.event else "hunter_guidance",
+                "mission_state": "proximity_trigger" if cmd.event else "hunter_guidance_target_offboard",
                 "vision_lock": vision.has_lock,
             }
             self.telemetry_log.append(log_entry)
@@ -635,6 +656,7 @@ class MothdroneController:
                 0.0,  # Maintain altitude
                 cmd.yaw_rad,
             )
+            await self.target.offboard.set_velocity_ned(VelocityNedYaw(target_vn, target_ve, 0.0, target_yaw_deg))
 
             await asyncio.sleep(0.2)
 

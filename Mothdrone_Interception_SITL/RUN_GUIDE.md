@@ -157,15 +157,16 @@ Edit `configs/mission_config.json` to change:
 ## Algorithm Flow
 
 ```
-1. SPAWN:    Hunter at (0,0), Target at 40m east
-2. TAKEOFF:  Both arm, enter offboard, and climb past 20m
-3. PURSUE:   Target runs 2m/s mission; hunter listens and chases target
-4. CONFIRM:  Vision lock required when range < 35m
-5. TRIGGER:  At range <= 25m with vision lock → MOTOR STOP
-6. FREEFALL: Target receives SITL-only kill and falls/disarms
-7. IMPACT:   Target hits ground, disarms
-8. BREAKAWAY: Hunter climbs to 40m
-9. RTL:      Hunter returns to launch and lands
+1. SPAWN:    Hunter at (0,0), Target at 100m east
+2. TAKEOFF:  Both arm and use offboard climb support past 20m
+3. TARGET:   Target stays in offboard and flies a simple path at ~2m/s
+4. PURSUE:   Hunter stays in offboard and chases target telemetry
+5. CONFIRM:  Vision lock required when range < 35m
+6. TRIGGER:  At range <= 25m with vision lock → MOTOR STOP
+7. FREEFALL: Target receives SITL-only kill and falls/disarms
+8. IMPACT:   Target hits ground, disarms
+9. BREAKAWAY: Hunter climbs to 40m
+10. RTL:     Hunter returns to launch and lands
 ```
 
 ## Files Reference
@@ -177,6 +178,7 @@ Edit `configs/mission_config.json` to change:
 | `code/simulated_runner.py` | Pure Python simulation (no PX4) |
 | `code/telemetry_forwarder.py` | QGC telemetry bridge |
 | `code/live_trajectory_server.py` | Live browser trajectory graph |
+| `code/plot_trajectory_3d.py` | Static 3D trajectory graph generator |
 | `worlds/mothdrone_world.sdf` | Gazebo world with both VTOLs |
 | `configs/mission_config.json` | Mission parameters |
 | `code/vtol_proximity_guidance.py` | Core guidance algorithm |

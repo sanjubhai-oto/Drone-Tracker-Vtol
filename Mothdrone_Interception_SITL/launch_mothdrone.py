@@ -53,11 +53,11 @@ class SimulationManager:
         env["PX4_GZ_MODELS"] = str(PX4_GZ_DIR / "models")
         env["PX4_GZ_WORLDS"] = str(PX4_GZ_DIR / "worlds")
         if instance_id == 1:
-            # Target is 40m ahead of hunter. A wide diagonal follow camera keeps
+            # Target is 100m ahead of hunter. A wide diagonal follow camera keeps
             # both VTOLs in frame while the hunter closes the range.
-            env["PX4_GZ_FOLLOW_OFFSET_X"] = "-30"
-            env["PX4_GZ_FOLLOW_OFFSET_Y"] = "-30"
-            env["PX4_GZ_FOLLOW_OFFSET_Z"] = "25"
+            env["PX4_GZ_FOLLOW_OFFSET_X"] = "-70"
+            env["PX4_GZ_FOLLOW_OFFSET_Y"] = "-60"
+            env["PX4_GZ_FOLLOW_OFFSET_Z"] = "45"
         env["GZ_SIM_RESOURCE_PATH"] = os.pathsep.join([
             str(LOCAL_GZ_STORE / "models"),
             str(LOCAL_GZ_STORE / "worlds"),
@@ -153,8 +153,8 @@ def main():
         # Step 1: Start PX4 hunter. PX4 launches Gazebo GUI and spawns standard VTOL.
         manager.start_px4_instance(0, "0,0,0,0,0,0", standalone=False, model="standard_vtol")
 
-        # Step 2: Start PX4 target 40m east in standalone mode; same Gazebo world, second standard VTOL.
-        manager.start_px4_instance(1, "0,40,0,0,0,0", standalone=True, model="standard_vtol")
+        # Step 2: Start PX4 target 100m east in standalone mode; same Gazebo world, second standard VTOL.
+        manager.start_px4_instance(1, "0,100,0,0,0,0", standalone=True, model="standard_vtol")
         
         # Step 3: Start MAVLink router for QGC
         # manager.start_mavlink_router()  # Uncomment if mavproxy available

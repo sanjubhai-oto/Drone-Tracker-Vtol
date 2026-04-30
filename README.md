@@ -7,7 +7,8 @@ The repository now includes a complete two-VTOL Mothdrone SITL package with:
 - PX4/Gazebo standard VTOL launch
 - two-airframe hunter + target control
 - full offboard takeoff
-- target mission cruise
+- target-first arm sync
+- moving target offboard path
 - hunter guidance toward target telemetry
 - 25 m proximity trigger
 - SITL-only target motor-stop/kill event
@@ -37,7 +38,7 @@ Main files:
 | File | Purpose |
 | --- | --- |
 | `launch_mothdrone.py` | Starts two PX4 standard VTOL SITL vehicles and runs mission |
-| `code/mothdrone_controller.py` | Offboard takeoff, target mission, hunter guidance, trigger, target kill, hunter RTL |
+| `code/mothdrone_controller.py` | Target-first arm sync, both-offboard takeoff, moving target path, hunter guidance, trigger, target kill, hunter RTL |
 | `code/live_trajectory_server.py` | Live browser 3D trajectory graph |
 | `outputs/graphs/mothdrone_trajectory_3d.svg` | Static 3D trajectory image |
 | `outputs/graphs/mothdrone_mission_graph.svg` | Path/range/altitude graph |
@@ -48,11 +49,18 @@ Main files:
 
 From the included telemetry:
 
-- start range: `40.0 m`
-- trigger range: `24.8 m`
+- start range: `99.9 m`
+- trigger range: `25.0 m`
+- target path: `E=100.0 -> 155.2 m`, `N=0.0 -> 10.6 m`
 - target after trigger: SITL kill accepted, altitude logged at `0.0 m`
-- hunter after trigger: climbed from `20.8 m` to `59.5 m`
+- hunter after trigger: climbed from `21.5 m` to `59.6 m`
 - recovery: target did not RTL; hunter alone performed breakaway/RTL
+
+### Latest Graphs
+
+![Mothdrone 3D trajectory](Mothdrone_Interception_SITL/outputs/graphs/mothdrone_trajectory_3d.svg)
+
+![Mothdrone mission graph](Mothdrone_Interception_SITL/outputs/graphs/mothdrone_mission_graph.svg)
 
 ### Run SITL
 

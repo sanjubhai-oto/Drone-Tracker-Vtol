@@ -5,7 +5,7 @@ This package contains the Mothdrone VTOL SITL demo code, algorithm docs, world/m
 ## What Is Included
 
 - `launch_mothdrone.py`: main two-VTOL SITL launcher.
-- `code/mothdrone_controller.py`: offboard takeoff, target mission, hunter guidance, 25 m trigger, SITL target kill, hunter RTL.
+- `code/mothdrone_controller.py`: target-first arm sync, both-offboard takeoff, moving target path, hunter guidance, 25 m trigger, SITL target kill, hunter RTL.
 - `docs/GUIDANCE_STATE_MACHINE.md`: guidance state machine.
 - `docs/ALGORITHM.md`: algorithm summary.
 - `worlds/` and `models/`: local world/model assets.
@@ -52,10 +52,11 @@ http://127.0.0.1:8790/live_trajectory.html
 
 ## Latest Verified Result
 
-- Start range: 40.0 m.
-- Trigger range: 24.8 m.
+- Start range: 99.9 m.
+- Trigger range: 25.0 m.
+- Target moved from E=100.0 m to E=155.2 m and N=0.0 m to N=10.6 m.
 - Target after trigger: SITL kill accepted, target altitude logged at 0.0 m.
-- Hunter after trigger: climbed from 20.8 m to 59.5 m during recovery monitor, then RTL.
+- Hunter after trigger: climbed from 21.5 m to 59.6 m during recovery monitor, then RTL.
 
 ## Safety Note
 

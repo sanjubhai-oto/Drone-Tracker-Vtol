@@ -5,10 +5,12 @@ This is the first implementation target for the VTOL demo. It is SITL-only for t
 ## Fixed Mission Concept
 
 - Hunter starts at home.
-- Target starts 40 m east of hunter.
-- Both VTOLs arm together, enter offboard, and climb by offboard velocity setpoints.
+- Target starts 100 m east of hunter.
+- Target arms first.
+- Hunter arms only after target `armed=true` is detected.
+- Both VTOLs use offboard climb support until the altitude gate.
 - No horizontal guidance starts until both VTOLs are above 20 m.
-- Target flies east at 2 m/s.
+- Target stays in offboard and runs a simple path at about 2 m/s.
 - Hunter starts pursuing target after the altitude gate.
 - Hunter pursuit speed is capped at 5 m/s.
 - When range is <= 25 m and vision confirmation is locked, hunter triggers the event signal.
@@ -20,9 +22,11 @@ This is the first implementation target for the VTOL demo. It is SITL-only for t
 
 | State | Owner | Condition | Command |
 | --- | --- | --- | --- |
-| `TAKEOFF_SYNC` | both | mission start | prime offboard setpoints, arm both, start offboard |
+| `TARGET_ARM` | target | mission start | arm target and wait for target `armed=true` |
+| `HUNTER_ARM_SYNC` | hunter | target armed detected | arm hunter |
+| `TAKEOFF_SYNC` | both | both armed | prime/start offboard climb support |
 | `ALTITUDE_GATE` | both | after takeoff command | wait until hunter and target altitude >= 20 m |
-| `TARGET_CRUISE` | target | altitude gate passed | offboard velocity: 0 N, 2 E, 0 D m/s |
+| `TARGET_OFFBOARD_PATH` | target | altitude gate passed | offboard path velocity at about 2 m/s |
 | `HUNTER_GUIDANCE` | hunter | altitude gate passed and range > 25 m | pursue target bearing, max 5 m/s, hold altitude |
 | `VISION_CONFIRM` | hunter | range <= 35 m | require lock and confidence >= 0.55 |
 | `PROXIMITY_TRIGGER` | both | range <= 25 m and vision locked | emit `target_motor_stop_freefall` |
@@ -68,8 +72,10 @@ and vision_confidence >= 0.55
 
 ## Files
 
-- `launch_mothdrone.py`: starts two PX4 standard VTOL SITL vehicles. Target spawn pose is `0,40,0,0,0,0`.
+- `launch_mothdrone.py`: starts two PX4 standard VTOL SITL vehicles. Target spawn pose is `0,100,0,0,0,0`.
 - `code/mothdrone_controller.py`: live MAVSDK state machine and guidance runner.
+- `code/live_trajectory_server.py`: browser live 3D trajectory page.
+- `code/plot_trajectory_3d.py`: static 3D trajectory SVG generator.
 - `code/vtol_proximity_guidance.py`: dependency-free algorithm model and freefall physics.
 - `tests/test_vtol_freefall.py`: unit check for freefall/disarm physics.
 - `mothdrone_telemetry.json`: latest run telemetry, including guidance and post-event recovery samples.
