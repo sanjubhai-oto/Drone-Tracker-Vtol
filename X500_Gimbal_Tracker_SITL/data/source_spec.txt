@@ -1,0 +1,105 @@
+Project Specification Document: X500 Gimbal Tracker
+Interception System
+1. Project Overview & Identity
+    • Project Name: X500 Gimbal Tracker.
+Project Specification Document: X500 Gimbal Tracker System
+1. Project Overview & Identity
+
+
+  Project Name: X500 Gimbal Tracker.
+
+
+Objective: Developing an autonomous C-UAS (Counter-UAV) X500 gimbal interceptor.
+
+
+  Client Profile: A final-year Information Systems student at Najran University, leading a tactical
+defense project for the "Defensathon" competition.
+
+
+2. System Architecture
+
+
+  Autopilot: PX4 (Latest Stable).
+
+
+Simulator: Gazebo SITL (Standard X500 gimbal models).
+
+
+Control API: Python MAVSDK (preferred) or ROS2.
+
+
+Monitoring: QGroundControl (QGC) for real-time mission telemetry.
+
+
+3. Algorithmic Requirements (The Interception Logic)
+
+
+The system must implement a high-speed OODA Loop (Observe, Orient, Decide, Act) logic:
+A. Phase: Chase & Guidance (Logarithmic/Mathematical Logic)
+
+
+  Guidance Law: Implement Proportional Navigation (PN) or Lead Pursuit. The interceptor should
+not aim at the target's current position, but at the predicted intercept point.
+Closing Velocity (Vc): The script must calculate the closing velocity to adjust the interceptor’s
+throttle dynamically.
+
+
+Speed Stability: Interceptor speed must reach 15-20 m/s without crashing the physics engine or
+triggering Accel #0 fail: TIMEOUT.
+
+
+B. Phase: Neutralization (HPM Logic)
+
+
+  Kill Zone: Distance ≤25 meters.
+
+
+Command: Upon reaching the kill zone, the script triggers a logical "Kill" to the target drone
+(simulating a High Power Microwave pulse).
+
+
+Target Response: The target drone must immediately stop all motors and enter a realistic freefall in
+Gazebo.
+
+
+4. The Mission Execution Flow (Sequence)
+
+
+  Spawn: Two X500 gimbals in Gazebo; Target spawned 100m East of the Interceptor.
+
+
+Sync Takeoff: Both drones arm and takeoff to 20m Altitude.
+
+
+Active Pursuit: Target moves at ~4m/s; Interceptor initiates pursuit at max stable velocity.
+
+
+Neutralization: At 25m distance, Interceptor kills the Target.
+
+
+Breakaway: Interceptor executes an immediate Aggressive Breakaway (Pull-up to 40m altitude) to
+avoid falling debris.
+
+
+Recovery: Interceptor executes RTL (Return to Launch) and lands at the takeoff point.
+
+
+5. Critical Physics Tuning (The "Must-Fix")
+  The developer MUST tune PX4 parameters (e.g., MPC_XY_VEL_MAX, MPC_XY_CRUISE,
+and EKF2 settings) to allow high-speed maneuvers in SITL.
+
+
+The simulation must remain 100% stable with ZERO sensor timeouts.
+
+
+6. Deliverables
+
+
+  Full source code (Python script).
+
+
+  Any modified PX4 parameter files or airframe configurations.
+
+
+  A "Run Guide" for Ubuntu to launch the entire simulation with one or two commands.
+

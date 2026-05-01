@@ -1,0 +1,28 @@
+{
+  "project_name": "X500 Gimbal Tracker",
+  "package_name": "X500 Gimbal Tracker System (dosan)",
+  "airframes": {
+    "hunter": "PX4 X500 gimbal SITL airframe",
+    "target": "PX4 X500 gimbal SITL airframe"
+  },
+  "spawn": {
+    "target_east_of_hunter_m": 100,
+    "requested_user_range_m": "100 m target-start both-offboard test"
+  },
+  "mission": {
+    "takeoff_altitude_m": 20,
+    "target_speed_mps": 4,
+    "target_mode": "PX4 offboard target path after altitude gate",
+    "hunter_mode": "PX4 offboard guidance",
+    "hunter_speed_goal_mps": 15,
+    "proximity_event_radius_m": 25,
+    "breakaway_altitude_m": 40,
+    "recovery": "hunter RTL and land"
+  },
+  "safety_policy": {
+    "real_motor_kill": "implemented as SITL simulation only",
+    "mid_air_freefall_command": "implemented as SITL simulation only",
+    "target_response": "motor_stop → freefall → ground_impact → disarm",
+    "allowed_target_response": "SITL-only: motor stop, gravity freefall, ground contact disarm"
+  }
+}

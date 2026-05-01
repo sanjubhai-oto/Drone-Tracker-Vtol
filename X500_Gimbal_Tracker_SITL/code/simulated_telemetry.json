@@ -1,0 +1,123 @@
+[
+  {
+    "time": 0.5,
+    "hunter_n": 0.0,
+    "hunter_e": 0.0,
+    "hunter_alt": 20.0,
+    "target_n": 100.0,
+    "target_e": 0.0,
+    "target_alt": 20.0,
+    "range_m": 100.0,
+    "mode": "gps_lead_pursuit_visual_gate"
+  },
+  {
+    "time": 1.0,
+    "hunter_n": 2.0,
+    "hunter_e": 0.0,
+    "hunter_alt": 20.0,
+    "target_n": 100.0,
+    "target_e": 2.0,
+    "target_alt": 20.0,
+    "range_m": 98.0,
+    "mode": "gps_lead_pursuit_visual_gate"
+  },
+  {
+    "time": 1.5,
+    "hunter_n": 9.9,
+    "hunter_e": 0.2,
+    "hunter_alt": 20.0,
+    "target_n": 100.0,
+    "target_e": 4.0,
+    "target_alt": 20.0,
+    "range_m": 90.2,
+    "mode": "gps_lead_pursuit_visual_gate"
+  },
+  {
+    "time": 2.0,
+    "hunter_n": 18.9,
+    "hunter_e": 0.5,
+    "hunter_alt": 20.0,
+    "target_n": 100.0,
+    "target_e": 6.0,
+    "target_alt": 20.0,
+    "range_m": 81.3,
+    "mode": "gps_lead_pursuit_visual_gate"
+  },
+  {
+    "time": 2.5,
+    "hunter_n": 27.8,
+    "hunter_e": 1.1,
+    "hunter_alt": 20.0,
+    "target_n": 100.0,
+    "target_e": 8.0,
+    "target_alt": 20.0,
+    "range_m": 72.5,
+    "mode": "gps_lead_pursuit_visual_gate"
+  },
+  {
+    "time": 3.0,
+    "hunter_n": 36.8,
+    "hunter_e": 2.0,
+    "hunter_alt": 20.0,
+    "target_n": 100.0,
+    "target_e": 10.0,
+    "target_alt": 20.0,
+    "range_m": 63.7,
+    "mode": "gps_lead_pursuit_visual_gate"
+  },
+  {
+    "time": 3.5,
+    "hunter_n": 45.7,
+    "hunter_e": 3.1,
+    "hunter_alt": 20.0,
+    "target_n": 100.0,
+    "target_e": 12.0,
+    "target_alt": 20.0,
+    "range_m": 55.0,
+    "mode": "gps_lead_pursuit_visual_gate"
+  },
+  {
+    "time": 4.0,
+    "hunter_n": 54.6,
+    "hunter_e": 4.6,
+    "hunter_alt": 20.0,
+    "target_n": 100.0,
+    "target_e": 14.0,
+    "target_alt": 20.0,
+    "range_m": 46.4,
+    "mode": "gps_lead_pursuit_visual_gate"
+  },
+  {
+    "time": 4.5,
+    "hunter_n": 63.4,
+    "hunter_e": 6.4,
+    "hunter_alt": 20.0,
+    "target_n": 100.0,
+    "target_e": 16.0,
+    "target_alt": 20.0,
+    "range_m": 37.8,
+    "mode": "gps_lead_pursuit_visual_gate"
+  },
+  {
+    "time": 5.0,
+    "hunter_n": 72.1,
+    "hunter_e": 8.7,
+    "hunter_alt": 20.0,
+    "target_n": 100.0,
+    "target_e": 18.0,
+    "target_alt": 20.0,
+    "range_m": 29.4,
+    "mode": "gps_lead_pursuit_visual_gate"
+  },
+  {
+    "time": 5.5,
+    "hunter_n": 80.7,
+    "hunter_e": 11.5,
+    "hunter_alt": 20.0,
+    "target_n": 100.0,
+    "target_e": 20.0,
+    "target_alt": 20.0,
+    "range_m": 21.1,
+    "mode": "proximity_event_confirmed"
+  }
+]

@@ -2,7 +2,12 @@
 
 Starter workspace for PX4 SITL, Gazebo, ROS 2, and multi-vehicle simulation examples.
 
-The repository now includes a complete two-VTOL Mothdrone SITL package with:
+The repository now includes two packaged PX4/Gazebo demos:
+
+- `Mothdrone_Interception_SITL/`: two standard VTOL vehicles
+- `X500_Gimbal_Tracker_SITL/`: two `x500_gimbal` multicopters with the same guidance concept
+
+The Mothdrone package includes:
 
 - PX4/Gazebo standard VTOL launch
 - two-airframe hunter + target control
@@ -25,6 +30,7 @@ The repository now includes a complete two-VTOL Mothdrone SITL package with:
 | `Gazebo/` | Gazebo/GZ setup notes |
 | `ROS2Humbel/` | ROS 2 Humble notes |
 | `Mothdrone_Interception_SITL/` | Full two-VTOL SITL demo package |
+| `X500_Gimbal_Tracker_SITL/` | Two `x500_gimbal` hunter/target SITL package |
 
 ## Mothdrone Interception SITL
 
@@ -115,3 +121,25 @@ MOTHDRONE_SITL_TARGET_KILL=1
 ```
 
 Do not use this as a real-aircraft motor-stop path.
+
+## X500 Gimbal Tracker SITL
+
+Run the X500 package:
+
+```bash
+cd X500_Gimbal_Tracker_SITL
+chmod +x scripts/*.sh
+./scripts/run_linux_bundle.sh
+```
+
+Live trajectory and camera panels:
+
+```bash
+python3 code/live_trajectory_server.py
+```
+
+Open:
+
+```text
+http://127.0.0.1:8790/live_trajectory.html
+```
