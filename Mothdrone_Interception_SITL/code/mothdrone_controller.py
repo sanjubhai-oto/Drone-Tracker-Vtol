@@ -385,6 +385,12 @@ class MothdroneController:
 
         await asyncio.sleep(0.5)
 
+        print("[MISSION] Forcing both VTOLs to multicopter mode before offboard climb...")
+        await asyncio.gather(
+            self._transition_to_multicopter(self.hunter, "hunter"),
+            self._transition_to_multicopter(self.target, "target"),
+        )
+
         print("[MISSION] Starting offboard mode on both VTOLs...")
         await asyncio.gather(
             self._ensure_offboard_started(self.hunter, "hunter"),
@@ -395,7 +401,7 @@ class MothdroneController:
         print(f"[MISSION] Waiting until both VTOLs are above {TAKEOFF_GATE_ALTITUDE_M:.0f}m before movement...")
         await self._wait_until_both_above_altitude(min_altitude_m=TAKEOFF_GATE_ALTITUDE_M, timeout_s=60.0)
 
-        print("[MISSION] Forcing both VTOLs to multicopter mode for velocity control...")
+        print("[MISSION] Reconfirming both VTOLs are in multicopter mode for velocity control...")
         await asyncio.gather(
             self._transition_to_multicopter(self.hunter, "hunter"),
             self._transition_to_multicopter(self.target, "target"),
@@ -563,11 +569,12 @@ class MothdroneController:
 
     async def _wait_until_both_above_altitude(self, min_altitude_m: float, timeout_s: float) -> None:
         deadline = time.monotonic() + timeout_s
+        last_recovery = 0.0
         while time.monotonic() < deadline:
             hunter_state = await self.get_telemetry(self.hunter, self.hunter_origin_ned_m)
             target_state = await self.get_telemetry(self.target, self.target_origin_ned_m)
-            hunter_vd = -1.5 if hunter_state.altitude_m < min_altitude_m + 1.0 else 0.0
-            target_vd = -1.5 if target_state.altitude_m < min_altitude_m + 1.0 else 0.0
+            hunter_vd = -2.0 if hunter_state.altitude_m < min_altitude_m + 1.0 else 0.0
+            target_vd = -2.0 if target_state.altitude_m < min_altitude_m + 1.0 else 0.0
             await asyncio.gather(
                 self.send_velocity_setpoint(self.hunter, 0.0, 0.0, hunter_vd, hunter_state.yaw_rad),
                 self.send_velocity_setpoint(self.target, 0.0, 0.0, target_vd, target_state.yaw_rad),
@@ -578,10 +585,36 @@ class MothdroneController:
             )
             if hunter_state.altitude_m >= min_altitude_m and target_state.altitude_m >= min_altitude_m:
                 return
+            now = time.monotonic()
+            if now - last_recovery > 8.0:
+                await self._recover_stuck_climb(hunter_state, target_state, min_altitude_m)
+                last_recovery = now
             await asyncio.sleep(1.0)
         raise RuntimeError(
             f"Altitude gate failed: hunter and target must both be above {min_altitude_m:.1f}m before guidance starts"
         )
+
+    async def _recover_stuck_climb(self, hunter_state: VehicleState, target_state: VehicleState, min_altitude_m: float) -> None:
+        """Recover Ubuntu/PX4 cases where one VTOL accepts offboard but stays landed."""
+        tasks = []
+        if hunter_state.altitude_m < 1.0 and hunter_state.altitude_m < min_altitude_m:
+            print("[MISSION] hunter climb recovery: reassert multicopter/offboard and takeoff")
+            tasks.append(self._recover_vehicle_climb(self.hunter, "hunter"))
+        if target_state.altitude_m < 1.0 and target_state.altitude_m < min_altitude_m:
+            print("[MISSION] target climb recovery: reassert multicopter/offboard and takeoff")
+            tasks.append(self._recover_vehicle_climb(self.target, "target"))
+        if tasks:
+            await asyncio.gather(*tasks)
+
+    async def _recover_vehicle_climb(self, system: System, role: str) -> None:
+        await self._transition_to_multicopter(system, role)
+        try:
+            await system.action.set_takeoff_altitude(TAKEOFF_GATE_ALTITUDE_M + 2.0)
+            await system.action.takeoff()
+            print(f"[MISSION] {role} PX4 takeoff recovery sent")
+        except Exception as exc:
+            print(f"[MISSION] {role} takeoff recovery warning: {exc}")
+        await self._ensure_offboard_started(system, role)
 
     @staticmethod
     def _target_offboard_path_velocity(loop_count: int) -> tuple[float, float, float]:

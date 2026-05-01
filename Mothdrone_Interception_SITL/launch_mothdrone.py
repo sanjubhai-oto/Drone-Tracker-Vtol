@@ -30,6 +30,7 @@ PX4_GZ_SERVER_CONFIG = PX4_DIR / "src" / "modules" / "simulation" / "gz_bridge" 
 LOCAL_GZ_STORE = Path.home() / ".simulation-gazebo"
 GZ_WORLD = os.environ.get("MOTHDRONE_GZ_WORLD", "default")
 EXPLICIT_GZ = os.environ.get("MOTHDRONE_EXPLICIT_GZ", "0") == "1"
+GZ_AUTO_FOLLOW = os.environ.get("MOTHDRONE_GZ_AUTO_FOLLOW", "0") == "1"
 HUNTER_UDP = "udpin://127.0.0.1:14540"
 TARGET_UDP = "udpin://127.0.0.1:14541"
 QGC_UDP = "udp://127.0.0.1:14550"
@@ -97,6 +98,8 @@ class SimulationManager:
         env["PX4_SYS_AUTOSTART"] = "4004"
         env["PX4_GZ_WORLD"] = GZ_WORLD
         env["PX4_GZ_MODEL_POSE"] = pose
+        if not GZ_AUTO_FOLLOW:
+            env["PX4_GZ_NO_FOLLOW"] = "1"
         if instance_id == 1:
             # Target is 100m ahead of hunter. A wide diagonal follow camera keeps
             # both VTOLs in frame while the hunter closes the range.

@@ -8,11 +8,13 @@ export MOTHDRONE_PX4_DIR="${MOTHDRONE_PX4_DIR:-$HOME/PX4-Autopilot}"
 export PYTHONUNBUFFERED=1
 export GZ_IP="${GZ_IP:-127.0.0.1}"
 export MOTHDRONE_EXPLICIT_GZ="${MOTHDRONE_EXPLICIT_GZ:-1}"
+export MOTHDRONE_GZ_AUTO_FOLLOW="${MOTHDRONE_GZ_AUTO_FOLLOW:-0}"
 
 echo "[BUNDLE] Mothdrone Linux SITL bundle"
 echo "[BUNDLE] root: $ROOT_DIR"
 echo "[BUNDLE] PX4:  $MOTHDRONE_PX4_DIR"
 echo "[BUNDLE] explicit Gazebo startup: $MOTHDRONE_EXPLICIT_GZ"
+echo "[BUNDLE] automatic Gazebo camera follow: $MOTHDRONE_GZ_AUTO_FOLLOW"
 
 bash scripts/cleanup_linux.sh
 python3 scripts/check_linux_env.py

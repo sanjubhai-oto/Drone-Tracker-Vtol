@@ -42,6 +42,20 @@ If you need to test the old PX4-starts-Gazebo behavior:
 MOTHDRONE_EXPLICIT_GZ=0 ./scripts/run_linux_bundle.sh
 ```
 
+Gazebo camera auto-follow is disabled by default so the view does not lock or freeze on one vehicle. You can manually follow a model while the sim is running:
+
+```bash
+./scripts/follow_gz_model.sh standard_vtol_0   # hunter
+./scripts/follow_gz_model.sh standard_vtol_1   # target
+./scripts/follow_gz_model.sh any off           # free camera
+```
+
+To restore PX4's automatic follow behavior:
+
+```bash
+MOTHDRONE_GZ_AUTO_FOLLOW=1 ./scripts/run_linux_bundle.sh
+```
+
 ### Prerequisites
 
 1. **PX4-Autopilot** built with SITL support:
