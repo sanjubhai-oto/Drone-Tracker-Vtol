@@ -20,8 +20,9 @@ from pathlib import Path
 from typing import Optional
 
 TARGET_START_EAST_M = 100.0
-TARGET_CRUISE_EAST_MPS = 2.0
-HUNTER_MAX_SPEED_MPS = 5.0
+TARGET_CRUISE_EAST_MPS = 4.0
+HUNTER_MAX_SPEED_MPS = 15.0
+HUNTER_ACCEL_LIMIT_MPS2 = 1.5
 TAKEOFF_GATE_ALTITUDE_M = 20.0
 HUNTER_BREAKAWAY_ALTITUDE_M = 40.0
 
@@ -68,6 +69,11 @@ class GuidanceCommand:
     east_velocity_mps: float
     altitude_m: float
     yaw_rad: float
+    speed_mps: float = 0.0
+    closing_velocity_mps: float = 0.0
+    lead_time_s: float = 0.0
+    predicted_target_n_m: float = 0.0
+    predicted_target_e_m: float = 0.0
     event: Optional[str] = None
 
 
@@ -149,10 +155,13 @@ class VtolGuidance:
         self.vision_confirm_radius_m = 35.0
         self.takeoff_altitude_m = 20.0
         self.breakaway_altitude_m = 40.0
-        self.max_hunter_speed_mps = 5.0
-        self.target_speed_mps = 2.0
+        self.max_hunter_speed_mps = HUNTER_MAX_SPEED_MPS
+        self.target_speed_mps = TARGET_CRUISE_EAST_MPS
         self.pn_navigation_constant = 3.0
         self.min_safe_event_altitude_m = 5.0
+        self.accel_limit_mps2 = HUNTER_ACCEL_LIMIT_MPS2
+        self.control_dt_s = 0.2
+        self._commanded_speed_mps = 0.0
         self._event_triggered = False
 
     def command(self, hunter: VehicleState, target: VehicleState, vision: VisionConfirmation) -> GuidanceCommand:
@@ -160,6 +169,9 @@ class VtolGuidance:
         rel_e = target.east_m - hunter.east_m
         range_m = math.hypot(rel_n, rel_e)
         bearing = math.atan2(rel_e, rel_n)
+        rel_vn = target.vn_mps - hunter.vn_mps
+        rel_ve = target.ve_mps - hunter.ve_mps
+        closing_velocity = self._closing_velocity(rel_n, rel_e, rel_vn, rel_ve, range_m)
 
         if self._event_triggered:
             return GuidanceCommand(
@@ -168,6 +180,7 @@ class VtolGuidance:
                 east_velocity_mps=0.0,
                 altitude_m=self.breakaway_altitude_m,
                 yaw_rad=hunter.yaw_rad,
+                closing_velocity_mps=closing_velocity,
                 event="breakaway_then_rtl",
             )
 
@@ -179,16 +192,46 @@ class VtolGuidance:
                 east_velocity_mps=0.0,
                 altitude_m=self.breakaway_altitude_m,
                 yaw_rad=bearing,
+                closing_velocity_mps=closing_velocity,
                 event="target_motor_stop_freefall",
             )
 
-        speed = self._lead_pursuit_speed(hunter, target, range_m)
+        los_n = rel_n / max(range_m, 1e-6)
+        los_e = rel_e / max(range_m, 1e-6)
+        target_los_speed = target.vn_mps * los_n + target.ve_mps * los_e
+        speed = self._lead_pursuit_speed(range_m, closing_velocity, target_los_speed)
+        lead_time = self._lead_time(range_m, closing_velocity)
+        predicted_n = target.north_m + target.vn_mps * lead_time
+        predicted_e = target.east_m + target.ve_mps * lead_time
+        lead_n = predicted_n - hunter.north_m
+        lead_e = predicted_e - hunter.east_m
+        lead_norm = max(math.hypot(lead_n, lead_e), 1e-6)
+        lead_unit_n = lead_n / lead_norm
+        lead_unit_e = lead_e / lead_norm
+
+        # PN lateral correction from LOS rate. Kept bounded for SITL physics stability.
+        los_rate = self._los_rate(rel_n, rel_e, rel_vn, rel_ve, range_m)
+        lateral_speed = max(-4.0, min(4.0, self.pn_navigation_constant * closing_velocity * los_rate * 2.0))
+        perp_n = -lead_unit_e
+        perp_e = lead_unit_n
+        cmd_n = speed * lead_unit_n + lateral_speed * perp_n
+        cmd_e = speed * lead_unit_e + lateral_speed * perp_e
+        cmd_norm = max(math.hypot(cmd_n, cmd_e), 1e-6)
+        if cmd_norm > speed:
+            cmd_n = cmd_n / cmd_norm * speed
+            cmd_e = cmd_e / cmd_norm * speed
+        yaw = math.atan2(cmd_e, cmd_n)
         return GuidanceCommand(
-            mode="gps_lead_pursuit_visual_gate",
-            north_velocity_mps=speed * math.cos(bearing),
-            east_velocity_mps=speed * math.sin(bearing),
+            mode="pn_lead_pursuit_visual_gate",
+            north_velocity_mps=cmd_n,
+            east_velocity_mps=cmd_e,
             altitude_m=self.takeoff_altitude_m,
-            yaw_rad=bearing,
+            yaw_rad=yaw,
+            speed_mps=speed,
+            closing_velocity_mps=closing_velocity,
+            lead_time_s=lead_time,
+            predicted_target_n_m=predicted_n,
+            predicted_target_e_m=predicted_e,
             event=None,
         )
 
@@ -201,14 +244,54 @@ class VtolGuidance:
             return vision.has_lock and vision.confidence >= 0.55
         return False
 
-    def _lead_pursuit_speed(self, hunter: VehicleState, target: VehicleState, range_m: float) -> float:
-        if range_m > self.vision_confirm_radius_m:
-            return self.max_hunter_speed_mps
+    @staticmethod
+    def _closing_velocity(rel_n: float, rel_e: float, rel_vn: float, rel_ve: float, range_m: float) -> float:
+        if range_m <= 1e-6:
+            return 0.0
+        return -((rel_n * rel_vn + rel_e * rel_ve) / range_m)
 
-        desired_event_range_m = self.kill_zone_radius_m
-        range_error = max(0.0, range_m - desired_event_range_m)
-        commanded = self.target_speed_mps + 0.8 * range_error
-        return max(self.target_speed_mps + 1.0, min(self.max_hunter_speed_mps, commanded))
+    @staticmethod
+    def _los_rate(rel_n: float, rel_e: float, rel_vn: float, rel_ve: float, range_m: float) -> float:
+        if range_m <= 1e-6:
+            return 0.0
+        return (rel_n * rel_ve - rel_e * rel_vn) / (range_m * range_m)
+
+    def _lead_time(self, range_m: float, closing_velocity: float) -> float:
+        effective_close = max(2.0, closing_velocity)
+        return max(0.5, min(8.0, range_m / effective_close))
+
+    def _desired_closing_velocity(self, range_m: float) -> float:
+        """Range-dependent terminal profile.
+
+        The hunter is allowed to close aggressively while far away, then it
+        decelerates before the 35m vision-confirmation radius so the 25m
+        event is reached without a large overrun.
+        """
+        if range_m > 80.0:
+            return 11.0
+        if range_m > 60.0:
+            return 9.0
+        if range_m > 45.0:
+            return 6.0
+        if range_m > self.vision_confirm_radius_m:
+            return 3.5
+        return 1.6
+
+    def _lead_pursuit_speed(self, range_m: float, closing_velocity: float, target_los_speed: float = 0.0) -> float:
+        desired_closing = self._desired_closing_velocity(range_m)
+        target_speed = target_los_speed + desired_closing
+        if range_m <= self.vision_confirm_radius_m:
+            target_speed = min(target_speed, self.target_speed_mps + 2.0)
+        if closing_velocity > desired_closing + 2.0 and range_m < 45.0:
+            target_speed = min(target_speed, self.target_speed_mps + 1.0)
+        target_speed = max(self.target_speed_mps + 1.0, min(self.max_hunter_speed_mps, target_speed))
+
+        max_delta = self.accel_limit_mps2 * self.control_dt_s
+        if target_speed > self._commanded_speed_mps:
+            self._commanded_speed_mps = min(target_speed, self._commanded_speed_mps + max_delta)
+        else:
+            self._commanded_speed_mps = max(target_speed, self._commanded_speed_mps - 2.0 * max_delta)
+        return max(0.0, min(self.max_hunter_speed_mps, self._commanded_speed_mps))
 
 
 class MothdroneController:
@@ -263,8 +346,8 @@ class MothdroneController:
         """Arm both VTOLs and climb in offboard mode from the start."""
         print("[MISSION] Configuring multicopter velocity limits...")
         await asyncio.gather(
-            self._set_speed_profile(self.hunter, role="hunter", xy_max_mps=HUNTER_MAX_SPEED_MPS, xy_cruise_mps=HUNTER_MAX_SPEED_MPS, fw_trim_mps=5.0, fw_max_mps=7.0, fw_thr_max=0.6),
-            self._set_speed_profile(self.target, role="target", xy_max_mps=TARGET_CRUISE_EAST_MPS, xy_cruise_mps=TARGET_CRUISE_EAST_MPS, fw_trim_mps=2.0, fw_max_mps=3.0, fw_thr_max=0.6),
+            self._set_speed_profile(self.hunter, role="hunter", xy_max_mps=HUNTER_MAX_SPEED_MPS, xy_cruise_mps=12.0, fw_trim_mps=12.0, fw_max_mps=18.0, fw_thr_max=0.75),
+            self._set_speed_profile(self.target, role="target", xy_max_mps=TARGET_CRUISE_EAST_MPS, xy_cruise_mps=TARGET_CRUISE_EAST_MPS, fw_trim_mps=4.0, fw_max_mps=8.0, fw_thr_max=0.55),
         )
         await asyncio.gather(
             self._set_sitl_failsafe_profile(self.hunter, "hunter"),
@@ -346,6 +429,9 @@ class MothdroneController:
             ("FW_AIRSPD_TRIM", fw_trim_mps),
             ("FW_AIRSPD_MAX", fw_max_mps),
             ("FW_THR_MAX", fw_thr_max),
+            ("MPC_ACC_HOR", 3.0),
+            ("MPC_ACC_HOR_MAX", 5.0),
+            ("MPC_JERK_MAX", 8.0),
         ):
             try:
                 await system.param.set_param_float(name, float(value))
@@ -538,7 +624,7 @@ class MothdroneController:
             f"[MISSION] Target starts {TARGET_START_EAST_M:.0f}m East, runs offboard target path at ~{TARGET_CRUISE_EAST_MPS:.0f} m/s; "
             f"hunter pursuit capped at ~{HUNTER_MAX_SPEED_MPS:.0f} m/s"
         )
-        print("[MISSION] Hunter pursuing with Proportional Navigation...")
+        print("[MISSION] Hunter pursuing with PN lead-pursuit, closing velocity control, and acceleration limiting...")
 
         # Initialize target simulator with starting state
         self.target_simulator = TargetDroneSimulator(
@@ -593,6 +679,11 @@ class MothdroneController:
                 "mode": cmd.mode,
                 "mission_state": "proximity_trigger" if cmd.event else "hunter_guidance_target_offboard",
                 "vision_lock": vision.has_lock,
+                "closing_velocity_mps": round(cmd.closing_velocity_mps, 2),
+                "commanded_speed_mps": round(cmd.speed_mps, 2),
+                "lead_time_s": round(cmd.lead_time_s, 2),
+                "predicted_target_n": round(cmd.predicted_target_n_m, 1),
+                "predicted_target_e": round(cmd.predicted_target_e_m, 1),
             }
             self.telemetry_log.append(log_entry)
             self._write_telemetry_snapshot()
@@ -602,6 +693,7 @@ class MothdroneController:
                 print(f"[{loop_count:3d}] Range: {range_m:6.1f}m | "
                       f"Hunter: N={hunter_state.north_m:7.1f} E={hunter_state.east_m:7.1f} "
                       f"Target: N={target_state.north_m:7.1f} E={target_state.east_m:7.1f} "
+                      f"Vc={cmd.closing_velocity_mps:4.1f}m/s Speed={cmd.speed_mps:4.1f}m/s "
                       f"Mode: {cmd.mode}")
 
             # Handle events

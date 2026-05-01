@@ -49,11 +49,14 @@ Main files:
 
 From the included telemetry:
 
-- start range: `99.9 m`
-- trigger range: `25.0 m`
-- target path: `E=100.0 -> 155.2 m`, `N=0.0 -> 10.6 m`
+- start range: `99.6 m`
+- trigger range: `24.9 m`
+- target path before trigger: `E=99.7 -> 186.4 m`, `N=0.0 -> 5.6 m`
+- hunter path before trigger: `E=0.1 -> 161.5 m`, `N=0.2 -> 5.0 m`
+- hunter speed peak: `13.0 m/s`
+- peak closing velocity: `9.4 m/s`
 - target after trigger: SITL kill accepted, altitude logged at `0.0 m`
-- hunter after trigger: climbed from `21.5 m` to `59.6 m`
+- hunter after trigger: climbed from `20.7 m` to `59.6 m`
 - recovery: target did not RTL; hunter alone performed breakaway/RTL
 
 ### Latest Graphs

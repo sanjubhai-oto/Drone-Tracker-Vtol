@@ -1,20 +1,23 @@
-# Mothdrone 100m Both-Offboard VTOL SITL Report
+# Mothdrone 100m High-Speed Both-Offboard VTOL SITL Report
 
-Result: PASS for GUI launch, target-first arm sync, both-offboard climb, moving target offboard path, hunter guidance from 100 m, 25 m trigger, SITL target kill/fall, and hunter-only RTL.
+Result: PASS for GUI launch, target-first arm sync, both-offboard climb, moving target offboard path, hunter PN lead-pursuit guidance from 100 m, 25 m trigger gate, SITL target kill/fall/disarm, and hunter-only recovery/RTL.
 
 Key telemetry:
 - Spawn: hunter at 0 m, target at 100 m east.
 - Arm sync: target armed first; hunter armed only after target `armed=true` was detected.
 - Takeoff: both vehicles entered offboard and climbed by offboard velocity setpoints.
-- Takeoff gate: guidance started after hunter reached 21.6 m and target reached 22.0 m.
-- Target path: target stayed in offboard and moved from E=100.0 m to E=155.2 m, N=0.0 m to N=10.6 m.
-- Hunter path: hunter moved from E=0.1 m to E=127.5 m before recovery.
-- Start range: 99.9 m.
-- Trigger range: 25.0 m.
+- Takeoff gate: guidance started after hunter reached 20.9 m and target reached 20.9 m.
+- Target path: target stayed in offboard and moved from E=99.7 m to E=186.4 m, N=0.0 m to N=5.6 m before trigger.
+- Hunter path: hunter moved from E=0.1 m to E=161.5 m, N=0.2 m to N=5.0 m before trigger.
+- Start range: 99.6 m.
+- Trigger range: 24.9 m at loop 85.
 - Trigger state: `proximity_event_confirmed`.
 - Vision gate: `vision_lock=true` at trigger.
+- Hunter speed command: ramped to 13.0 m/s peak, then slowed to 5.5 m/s near the trigger radius.
+- Closing velocity: peaked at 9.4 m/s and settled to 1.6 m/s at trigger.
+- Target speed setting: 4 m/s offboard path.
 - Target after trigger: SITL kill accepted, target altitude logged at 0.0 m.
-- Hunter after trigger: held/climbed; altitude rose from 21.5 m at trigger to 59.6 m during recovery monitor.
+- Hunter after trigger: held/climbed; altitude rose from 20.7 m at trigger to 59.6 m during recovery monitor.
 - Hunter-only recovery: hunter RTL command sent after breakaway.
 
 Artifacts:
@@ -28,3 +31,5 @@ Artifacts:
 Notes:
 - This run uses both-offboard control, not PX4 target mission mode.
 - Target motor-stop behavior is SITL-only and guarded by `MOTHDRONE_SITL_TARGET_KILL=1`.
+- No `Accel #0 fail: TIMEOUT` was seen in the PX4 logs for this run.
+- PX4 did print startup EKF/airspeed/heading arming warnings and a non-blocking `COM_DL_LOSS_T` type mismatch warning.

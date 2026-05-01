@@ -11,10 +11,10 @@
   },
   "mission": {
     "takeoff_altitude_m": 20,
-    "target_speed_mps": 2,
+    "target_speed_mps": 4,
     "target_mode": "PX4 offboard target path after altitude gate",
     "hunter_mode": "PX4 offboard guidance",
-    "hunter_speed_goal_mps": 5,
+    "hunter_speed_goal_mps": 15,
     "proximity_event_radius_m": 25,
     "breakaway_altitude_m": 40,
     "recovery": "hunter RTL and land"

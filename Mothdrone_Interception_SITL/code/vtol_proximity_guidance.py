@@ -17,15 +17,17 @@ import math
 
 @dataclass(frozen=True)
 class VtolGuidanceConfig:
-    target_start_east_m: float = 40.0
+    target_start_east_m: float = 100.0
     kill_zone_radius_m: float = 25.0
     vision_confirm_radius_m: float = 35.0
     takeoff_altitude_m: float = 20.0
     breakaway_altitude_m: float = 40.0
-    max_hunter_speed_mps: float = 5.0
-    target_speed_mps: float = 2.0
+    max_hunter_speed_mps: float = 15.0
+    target_speed_mps: float = 4.0
     pn_navigation_constant: float = 3.0
     min_safe_event_altitude_m: float = 8.0
+    accel_limit_mps2: float = 1.5
+    control_dt_s: float = 0.2
 
 
 @dataclass(frozen=True)
@@ -57,6 +59,11 @@ class GuidanceCommand:
     east_velocity_mps: float
     altitude_m: float
     yaw_rad: float
+    speed_mps: float = 0.0
+    closing_velocity_mps: float = 0.0
+    lead_time_s: float = 0.0
+    predicted_target_n_m: float = 0.0
+    predicted_target_e_m: float = 0.0
     event: str | None = None
 
 
@@ -134,6 +141,7 @@ class VtolProximityGuidance:
     def __init__(self, config: VtolGuidanceConfig | None = None) -> None:
         self.config = config or VtolGuidanceConfig()
         self._event_triggered = False
+        self._commanded_speed_mps = 0.0
 
     def command(self, hunter: VehicleState, target: VehicleState, vision: VisionConfirmation) -> GuidanceCommand:
         cfg = self.config
@@ -141,6 +149,9 @@ class VtolProximityGuidance:
         rel_e = target.east_m - hunter.east_m
         range_m = math.hypot(rel_n, rel_e)
         bearing = math.atan2(rel_e, rel_n)
+        rel_vn = target.vn_mps - hunter.vn_mps
+        rel_ve = target.ve_mps - hunter.ve_mps
+        closing_velocity = self._closing_velocity(rel_n, rel_e, rel_vn, rel_ve, range_m)
 
         if self._event_triggered:
             return GuidanceCommand(
@@ -149,6 +160,7 @@ class VtolProximityGuidance:
                 east_velocity_mps=0.0,
                 altitude_m=cfg.breakaway_altitude_m,
                 yaw_rad=hunter.yaw_rad,
+                closing_velocity_mps=closing_velocity,
                 event="breakaway_then_rtl",
             )
 
@@ -160,16 +172,41 @@ class VtolProximityGuidance:
                 east_velocity_mps=0.0,
                 altitude_m=cfg.breakaway_altitude_m,
                 yaw_rad=bearing,
+                closing_velocity_mps=closing_velocity,
                 event="target_motor_stop_freefall",
             )
 
-        speed = self._lead_pursuit_speed(hunter, target, range_m)
+        los_n = rel_n / max(range_m, 1e-6)
+        los_e = rel_e / max(range_m, 1e-6)
+        target_los_speed = target.vn_mps * los_n + target.ve_mps * los_e
+        speed = self._lead_pursuit_speed(range_m, closing_velocity, target_los_speed)
+        lead_time = self._lead_time(range_m, closing_velocity)
+        predicted_n = target.north_m + target.vn_mps * lead_time
+        predicted_e = target.east_m + target.ve_mps * lead_time
+        lead_n = predicted_n - hunter.north_m
+        lead_e = predicted_e - hunter.east_m
+        lead_norm = max(math.hypot(lead_n, lead_e), 1e-6)
+        lead_unit_n = lead_n / lead_norm
+        lead_unit_e = lead_e / lead_norm
+        los_rate = self._los_rate(rel_n, rel_e, rel_vn, rel_ve, range_m)
+        lateral_speed = max(-4.0, min(4.0, cfg.pn_navigation_constant * closing_velocity * los_rate * 2.0))
+        cmd_n = speed * lead_unit_n + lateral_speed * -lead_unit_e
+        cmd_e = speed * lead_unit_e + lateral_speed * lead_unit_n
+        cmd_norm = max(math.hypot(cmd_n, cmd_e), 1e-6)
+        if cmd_norm > speed:
+            cmd_n = cmd_n / cmd_norm * speed
+            cmd_e = cmd_e / cmd_norm * speed
         return GuidanceCommand(
-            mode="gps_lead_pursuit_visual_gate",
-            north_velocity_mps=speed * math.cos(bearing),
-            east_velocity_mps=speed * math.sin(bearing),
+            mode="pn_lead_pursuit_visual_gate",
+            north_velocity_mps=cmd_n,
+            east_velocity_mps=cmd_e,
             altitude_m=cfg.takeoff_altitude_m,
-            yaw_rad=bearing,
+            yaw_rad=math.atan2(cmd_e, cmd_n),
+            speed_mps=speed,
+            closing_velocity_mps=closing_velocity,
+            lead_time_s=lead_time,
+            predicted_target_n_m=predicted_n,
+            predicted_target_e_m=predicted_e,
             event=None,
         )
 
@@ -189,14 +226,48 @@ class VtolProximityGuidance:
             return vision.has_lock and vision.confidence >= 0.55
         return False
 
-    def _lead_pursuit_speed(self, hunter: VehicleState, target: VehicleState, range_m: float) -> float:
-        cfg = self.config
-        if range_m > cfg.vision_confirm_radius_m:
-            return cfg.max_hunter_speed_mps
+    @staticmethod
+    def _closing_velocity(rel_n: float, rel_e: float, rel_vn: float, rel_ve: float, range_m: float) -> float:
+        if range_m <= 1e-6:
+            return 0.0
+        return -((rel_n * rel_vn + rel_e * rel_ve) / range_m)
 
-        range_error = max(0.0, range_m - cfg.kill_zone_radius_m)
-        commanded = cfg.target_speed_mps + 0.8 * range_error
-        return max(cfg.target_speed_mps + 1.0, min(cfg.max_hunter_speed_mps, commanded))
+    @staticmethod
+    def _los_rate(rel_n: float, rel_e: float, rel_vn: float, rel_ve: float, range_m: float) -> float:
+        if range_m <= 1e-6:
+            return 0.0
+        return (rel_n * rel_ve - rel_e * rel_vn) / (range_m * range_m)
+
+    def _lead_time(self, range_m: float, closing_velocity: float) -> float:
+        effective_close = max(2.0, closing_velocity)
+        return max(0.5, min(8.0, range_m / effective_close))
+
+    def _desired_closing_velocity(self, range_m: float) -> float:
+        if range_m > 80.0:
+            return 11.0
+        if range_m > 60.0:
+            return 9.0
+        if range_m > 45.0:
+            return 6.0
+        if range_m > self.config.vision_confirm_radius_m:
+            return 3.5
+        return 1.6
+
+    def _lead_pursuit_speed(self, range_m: float, closing_velocity: float, target_los_speed: float = 0.0) -> float:
+        cfg = self.config
+        desired_closing = self._desired_closing_velocity(range_m)
+        target_speed = target_los_speed + desired_closing
+        if range_m <= cfg.vision_confirm_radius_m:
+            target_speed = min(target_speed, cfg.target_speed_mps + 2.0)
+        if closing_velocity > desired_closing + 2.0 and range_m < 45.0:
+            target_speed = min(target_speed, cfg.target_speed_mps + 1.0)
+        target_speed = max(cfg.target_speed_mps + 1.0, min(cfg.max_hunter_speed_mps, target_speed))
+        max_delta = cfg.accel_limit_mps2 * cfg.control_dt_s
+        if target_speed > self._commanded_speed_mps:
+            self._commanded_speed_mps = min(target_speed, self._commanded_speed_mps + max_delta)
+        else:
+            self._commanded_speed_mps = max(target_speed, self._commanded_speed_mps - 2.0 * max_delta)
+        return max(0.0, min(cfg.max_hunter_speed_mps, self._commanded_speed_mps))
 
 
 def simulate_target_freefall(target: TargetDrone, dt: float = 0.05) -> list[dict]:

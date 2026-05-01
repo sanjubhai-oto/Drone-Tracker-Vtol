@@ -6,8 +6,9 @@ Two-standard-VTOL PX4/Gazebo simulation for a Mothdrone-style demo:
 - target arms first
 - hunter arms only after target `armed=true` is detected
 - both VTOLs use offboard climb support until the altitude gate
-- target then flies an offboard path at 2 m/s
-- hunter listens to target telemetry and navigates toward it
+- target then flies an offboard path at 4 m/s
+- hunter listens to target telemetry and uses PN lead-pursuit guidance toward a predicted intercept point
+- hunter speed ramps toward a 15 m/s cap with closing-velocity control
 - at <= 25 m with vision-confirmation gate, hunter triggers the event
 - target receives a SITL-only motor-stop/kill command and falls/disarms
 - hunter holds/climbs, then hunter-only RTL/land
@@ -18,14 +19,17 @@ This package is for simulation only.
 
 From the latest completed telemetry in `mothdrone_telemetry.json`:
 
-- start range: `99.9 m`
-- trigger range: `25.0 m`
+- start range: `99.6 m`
+- trigger range: `24.9 m`
 - trigger state: `proximity_event_confirmed`
-- target moved: `E=100.0 -> 155.2 m`, `N=0.0 -> 10.6 m`
-- hunter moved: `E=0.1 -> 127.5 m`
+- target moved before trigger: `E=99.7 -> 186.4 m`, `N=0.0 -> 5.6 m`
+- hunter moved before trigger: `E=0.1 -> 161.5 m`, `N=0.2 -> 5.0 m`
+- hunter commanded speed peak: `13.0 m/s`
+- peak closing velocity: `9.4 m/s`
 - target after trigger: SITL kill accepted, target altitude logged at `0.0 m`
-- hunter recovery: climbed from `21.5 m` to `59.6 m`
+- hunter recovery: climbed from `20.7 m` at trigger to `59.6 m`
 - result: target did not RTL after trigger; hunter alone performed recovery/RTL
+- log caveat: no `Accel #0 fail: TIMEOUT` was seen; PX4 still printed startup EKF/airspeed/heading warnings and a non-blocking `COM_DL_LOSS_T` type mismatch warning
 
 Report:
 

@@ -133,6 +133,16 @@ Static images from the latest verified run:
 - `outputs/graphs/mothdrone_trajectory_path.svg`
 - `outputs/graphs/mothdrone_mission_graph.svg`
 
+Latest verified SITL numbers:
+
+- start range: 99.6 m
+- trigger range: 24.9 m
+- target path before trigger: E=99.7 m to E=186.4 m
+- hunter path before trigger: E=0.1 m to E=161.5 m
+- hunter commanded speed peak: 13.0 m/s
+- peak closing velocity: 9.4 m/s
+- hunter recovery altitude monitor: 20.7 m to 59.6 m
+
 ## Mission Parameters
 
 Edit `configs/mission_config.json` to change:
@@ -140,8 +150,8 @@ Edit `configs/mission_config.json` to change:
 - Vision confirmation radius (default: 35m)
 - Takeoff altitude (default: 20m)
 - Breakaway altitude (default: 40m)
-- Hunter max speed (current verified: 5 m/s)
-- Target speed (current verified: 2 m/s)
+- Hunter max speed target: 15 m/s
+- Target speed target: 4 m/s
 
 ## Troubleshooting
 
@@ -159,8 +169,8 @@ Edit `configs/mission_config.json` to change:
 ```
 1. SPAWN:    Hunter at (0,0), Target at 100m east
 2. TAKEOFF:  Both arm and use offboard climb support past 20m
-3. TARGET:   Target stays in offboard and flies a simple path at ~2m/s
-4. PURSUE:   Hunter stays in offboard and chases target telemetry
+3. TARGET:   Target stays in offboard and flies a simple path at ~4m/s
+4. PURSUE:   Hunter stays in offboard and uses PN lead pursuit with closing velocity
 5. CONFIRM:  Vision lock required when range < 35m
 6. TRIGGER:  At range <= 25m with vision lock → MOTOR STOP
 7. FREEFALL: Target receives SITL-only kill and falls/disarms
