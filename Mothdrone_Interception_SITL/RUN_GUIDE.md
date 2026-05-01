@@ -14,7 +14,7 @@ This runs the full interception algorithm in pure Python — shows telemetry, tr
 
 ### Recommended Ubuntu Bundle
 
-Use this on Ubuntu instead of manually starting `launch_mothdrone.py`. It cleans stale PX4/Gazebo/MAVSDK processes, checks the PX4 build and Gazebo model/world files, installs Python requirements, sets the Gazebo resource paths, launches the mission, and prints sensor diagnostics if PX4 reports missing simulated sensors.
+Use this on Ubuntu instead of manually starting `launch_mothdrone.py`. It cleans stale PX4/Gazebo/MAVSDK processes, checks the PX4 build and Gazebo model/world files, installs Python requirements, sets the Gazebo resource paths, starts Gazebo explicitly, launches both PX4 instances in standalone mode, and prints sensor diagnostics if PX4 reports missing simulated sensors.
 
 ```bash
 cd Mothdrone_Interception_SITL
@@ -34,6 +34,12 @@ If QGC shows `Accelerometer sensor missing`, `Gyro sensor missing`, or `Baromete
 ./scripts/cleanup_linux.sh
 ./scripts/diagnose_linux_logs.sh
 ./scripts/run_linux_bundle.sh
+```
+
+If you need to test the old PX4-starts-Gazebo behavior:
+
+```bash
+MOTHDRONE_EXPLICIT_GZ=0 ./scripts/run_linux_bundle.sh
 ```
 
 ### Prerequisites

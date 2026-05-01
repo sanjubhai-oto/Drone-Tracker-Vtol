@@ -26,6 +26,7 @@ PX4_DIR = Path(os.environ.get("MOTHDRONE_PX4_DIR", str(Path.home() / "PX4-Autopi
 PX4_GZ_DIR = PX4_DIR / "Tools" / "simulation" / "gz"
 LOCAL_GZ_STORE = Path.home() / ".simulation-gazebo"
 GZ_WORLD = os.environ.get("MOTHDRONE_GZ_WORLD", "default")
+EXPLICIT_GZ = os.environ.get("MOTHDRONE_EXPLICIT_GZ", "0") == "1"
 HUNTER_UDP = "udpin://127.0.0.1:14540"
 TARGET_UDP = "udpin://127.0.0.1:14541"
 QGC_UDP = "udp://127.0.0.1:14550"
@@ -37,6 +38,41 @@ sys.path.insert(0, str(PACKAGE_DIR / "code"))
 class SimulationManager:
     def __init__(self):
         self.processes = []
+
+    def _gz_env(self):
+        env = os.environ.copy()
+        env["GZ_IP"] = "127.0.0.1"
+        env["PX4_GZ_MODELS"] = str(PX4_GZ_DIR / "models")
+        env["PX4_GZ_WORLDS"] = str(PX4_GZ_DIR / "worlds")
+        env["GZ_SIM_RESOURCE_PATH"] = os.pathsep.join([
+            str(LOCAL_GZ_STORE / "models"),
+            str(LOCAL_GZ_STORE / "worlds"),
+            str(PX4_GZ_DIR / "models"),
+            str(PX4_GZ_DIR / "worlds"),
+            str(PACKAGE_DIR / "models"),
+            str(PACKAGE_DIR / "worlds"),
+        ])
+        server_config = LOCAL_GZ_STORE / "server.config"
+        if server_config.exists():
+            env["GZ_SIM_SERVER_CONFIG_PATH"] = str(server_config)
+        return env
+
+    def start_gazebo_world(self):
+        """Start Gazebo explicitly before PX4, useful on Linux when PX4-started GZ has no sensors."""
+        world_path = PX4_GZ_DIR / "worlds" / f"{GZ_WORLD}.sdf"
+        if not world_path.exists():
+            world_path = PACKAGE_DIR / "worlds" / "px4_default" / "default.sdf"
+        gz_cmd = ["gz", "sim", "-r", str(world_path)]
+        print(f"[LAUNCHER] Starting explicit Gazebo world: {world_path}")
+        proc = subprocess.Popen(
+            gz_cmd,
+            cwd=PACKAGE_DIR,
+            env=self._gz_env(),
+            stdout=open(LOG_DIR / "gazebo.log", "w"),
+            stderr=open(LOG_DIR / "gazebo.err.log", "w"),
+        )
+        self.processes.append(proc)
+        time.sleep(8)
         
     def start_px4_instance(self, instance_id: int, pose: str, standalone: bool, model: str = "standard_vtol"):
         """Start a PX4 SITL instance and let PX4 spawn a standard VTOL in Gazebo."""
@@ -44,29 +80,17 @@ class SimulationManager:
         working_dir = build_dir / f"instance_{instance_id}"
         working_dir.mkdir(exist_ok=True)
         
-        env = os.environ.copy()
+        env = self._gz_env()
         env["PX4_SIM_MODEL"] = f"gz_{model}"
         env["PX4_SYS_AUTOSTART"] = "4004"
         env["PX4_GZ_WORLD"] = GZ_WORLD
         env["PX4_GZ_MODEL_POSE"] = pose
-        env["GZ_IP"] = "127.0.0.1"
-        env["PX4_GZ_MODELS"] = str(PX4_GZ_DIR / "models")
-        env["PX4_GZ_WORLDS"] = str(PX4_GZ_DIR / "worlds")
         if instance_id == 1:
             # Target is 100m ahead of hunter. A wide diagonal follow camera keeps
             # both VTOLs in frame while the hunter closes the range.
             env["PX4_GZ_FOLLOW_OFFSET_X"] = "-70"
             env["PX4_GZ_FOLLOW_OFFSET_Y"] = "-60"
             env["PX4_GZ_FOLLOW_OFFSET_Z"] = "45"
-        env["GZ_SIM_RESOURCE_PATH"] = os.pathsep.join([
-            str(LOCAL_GZ_STORE / "models"),
-            str(LOCAL_GZ_STORE / "worlds"),
-            str(PX4_GZ_DIR / "models"),
-            str(PX4_GZ_DIR / "worlds"),
-        ])
-        server_config = LOCAL_GZ_STORE / "server.config"
-        if server_config.exists():
-            env["GZ_SIM_SERVER_CONFIG_PATH"] = str(server_config)
         if standalone:
             env["PX4_GZ_STANDALONE"] = "1"
         
@@ -150,8 +174,11 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
     
     try:
+        if EXPLICIT_GZ:
+            manager.start_gazebo_world()
+
         # Step 1: Start PX4 hunter. PX4 launches Gazebo GUI and spawns standard VTOL.
-        manager.start_px4_instance(0, "0,0,0,0,0,0", standalone=False, model="standard_vtol")
+        manager.start_px4_instance(0, "0,0,0,0,0,0", standalone=EXPLICIT_GZ, model="standard_vtol")
 
         # Step 2: Start PX4 target 100m east in standalone mode; same Gazebo world, second standard VTOL.
         manager.start_px4_instance(1, "0,100,0,0,0,0", standalone=True, model="standard_vtol")
