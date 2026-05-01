@@ -79,8 +79,8 @@ Run:
 
 ```bash
 cd Mothdrone_Interception_SITL
-python3 -m pip install -r requirements.txt
-python3 launch_mothdrone.py
+chmod +x scripts/*.sh
+./scripts/run_linux_bundle.sh
 ```
 
 On the original tested macOS machine:

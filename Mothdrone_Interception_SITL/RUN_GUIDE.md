@@ -12,6 +12,30 @@ This runs the full interception algorithm in pure Python — shows telemetry, tr
 
 ## Full SITL Simulation (Ubuntu/Linux Recommended)
 
+### Recommended Ubuntu Bundle
+
+Use this on Ubuntu instead of manually starting `launch_mothdrone.py`. It cleans stale PX4/Gazebo/MAVSDK processes, checks the PX4 build and Gazebo model/world files, installs Python requirements, sets the Gazebo resource paths, launches the mission, and prints sensor diagnostics if PX4 reports missing simulated sensors.
+
+```bash
+cd Mothdrone_Interception_SITL
+chmod +x scripts/*.sh
+./scripts/run_linux_bundle.sh
+```
+
+If PX4 is not at `~/PX4-Autopilot`:
+
+```bash
+MOTHDRONE_PX4_DIR=/path/to/PX4-Autopilot ./scripts/run_linux_bundle.sh
+```
+
+If QGC shows `Accelerometer sensor missing`, `Gyro sensor missing`, or `Barometer missing`, PX4 is running without the Gazebo sensor bridge. Run:
+
+```bash
+./scripts/cleanup_linux.sh
+./scripts/diagnose_linux_logs.sh
+./scripts/run_linux_bundle.sh
+```
+
 ### Prerequisites
 
 1. **PX4-Autopilot** built with SITL support:

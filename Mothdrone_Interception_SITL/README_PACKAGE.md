@@ -28,6 +28,16 @@ This zip does not include PX4-Autopilot, Gazebo, QGroundControl, or Python virtu
 
 ## Run
 
+Ubuntu recommended:
+
+```bash
+cd "Mothdrone_Interception_Package"
+chmod +x scripts/*.sh
+./scripts/run_linux_bundle.sh
+```
+
+Generic:
+
 ```bash
 cd "Mothdrone_Interception_Package"
 python3 -m pip install -r requirements.txt

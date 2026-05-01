@@ -22,10 +22,10 @@ import sys
 from pathlib import Path
 
 # Configuration
-PX4_DIR = Path.home() / "PX4-Autopilot"
+PX4_DIR = Path(os.environ.get("MOTHDRONE_PX4_DIR", str(Path.home() / "PX4-Autopilot"))).expanduser()
 PX4_GZ_DIR = PX4_DIR / "Tools" / "simulation" / "gz"
 LOCAL_GZ_STORE = Path.home() / ".simulation-gazebo"
-GZ_WORLD = "default"
+GZ_WORLD = os.environ.get("MOTHDRONE_GZ_WORLD", "default")
 HUNTER_UDP = "udpin://127.0.0.1:14540"
 TARGET_UDP = "udpin://127.0.0.1:14541"
 QGC_UDP = "udp://127.0.0.1:14550"

@@ -54,6 +54,14 @@ Images:
 
 ## Run Full SITL
 
+Ubuntu recommended:
+
+```bash
+cd Mothdrone_Interception_SITL
+chmod +x scripts/*.sh
+./scripts/run_linux_bundle.sh
+```
+
 Prerequisites:
 
 - PX4-Autopilot built at `~/PX4-Autopilot`
