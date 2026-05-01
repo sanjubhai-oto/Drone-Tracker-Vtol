@@ -23,7 +23,10 @@ from pathlib import Path
 
 # Configuration
 PX4_DIR = Path(os.environ.get("MOTHDRONE_PX4_DIR", str(Path.home() / "PX4-Autopilot"))).expanduser()
+PX4_BUILD_DIR = PX4_DIR / "build" / "px4_sitl_default"
 PX4_GZ_DIR = PX4_DIR / "Tools" / "simulation" / "gz"
+PX4_GZ_PLUGINS = PX4_BUILD_DIR / "src" / "modules" / "simulation" / "gz_plugins"
+PX4_GZ_SERVER_CONFIG = PX4_DIR / "src" / "modules" / "simulation" / "gz_bridge" / "server.config"
 LOCAL_GZ_STORE = Path.home() / ".simulation-gazebo"
 GZ_WORLD = os.environ.get("MOTHDRONE_GZ_WORLD", "default")
 EXPLICIT_GZ = os.environ.get("MOTHDRONE_EXPLICIT_GZ", "0") == "1"
@@ -44,6 +47,7 @@ class SimulationManager:
         env["GZ_IP"] = "127.0.0.1"
         env["PX4_GZ_MODELS"] = str(PX4_GZ_DIR / "models")
         env["PX4_GZ_WORLDS"] = str(PX4_GZ_DIR / "worlds")
+        env["PX4_GZ_PLUGINS"] = str(PX4_GZ_PLUGINS)
         env["GZ_SIM_RESOURCE_PATH"] = os.pathsep.join([
             str(LOCAL_GZ_STORE / "models"),
             str(LOCAL_GZ_STORE / "worlds"),
@@ -52,9 +56,17 @@ class SimulationManager:
             str(PACKAGE_DIR / "models"),
             str(PACKAGE_DIR / "worlds"),
         ])
-        server_config = LOCAL_GZ_STORE / "server.config"
-        if server_config.exists():
-            env["GZ_SIM_SERVER_CONFIG_PATH"] = str(server_config)
+        existing_plugin_path = env.get("GZ_SIM_SYSTEM_PLUGIN_PATH", "")
+        plugin_paths = [str(PX4_GZ_PLUGINS)]
+        if existing_plugin_path:
+            plugin_paths.append(existing_plugin_path)
+        env["GZ_SIM_SYSTEM_PLUGIN_PATH"] = os.pathsep.join(plugin_paths)
+        if PX4_GZ_SERVER_CONFIG.exists():
+            env["GZ_SIM_SERVER_CONFIG_PATH"] = str(PX4_GZ_SERVER_CONFIG)
+        else:
+            server_config = LOCAL_GZ_STORE / "server.config"
+            if server_config.exists():
+                env["GZ_SIM_SERVER_CONFIG_PATH"] = str(server_config)
         return env
 
     def start_gazebo_world(self):
@@ -76,7 +88,7 @@ class SimulationManager:
         
     def start_px4_instance(self, instance_id: int, pose: str, standalone: bool, model: str = "standard_vtol"):
         """Start a PX4 SITL instance and let PX4 spawn a standard VTOL in Gazebo."""
-        build_dir = PX4_DIR / "build" / "px4_sitl_default"
+        build_dir = PX4_BUILD_DIR
         working_dir = build_dir / f"instance_{instance_id}"
         working_dir.mkdir(exist_ok=True)
         

@@ -21,12 +21,20 @@ echo "[BUNDLE] installing/checking Python requirements..."
 python3 -m pip install --user -r requirements.txt
 
 PX4_GZ_DIR="$MOTHDRONE_PX4_DIR/Tools/simulation/gz"
+PX4_BUILD_DIR="$MOTHDRONE_PX4_DIR/build/px4_sitl_default"
+PX4_GZ_PLUGINS="$PX4_BUILD_DIR/src/modules/simulation/gz_plugins"
+PX4_GZ_SERVER_CONFIG="$MOTHDRONE_PX4_DIR/src/modules/simulation/gz_bridge/server.config"
 LOCAL_GZ_STORE="$HOME/.simulation-gazebo"
 export GZ_SIM_RESOURCE_PATH="$LOCAL_GZ_STORE/models:$LOCAL_GZ_STORE/worlds:$PX4_GZ_DIR/models:$PX4_GZ_DIR/worlds:$ROOT_DIR/models:$ROOT_DIR/worlds"
+export GZ_SIM_SYSTEM_PLUGIN_PATH="$PX4_GZ_PLUGINS${GZ_SIM_SYSTEM_PLUGIN_PATH:+:$GZ_SIM_SYSTEM_PLUGIN_PATH}"
+export GZ_SIM_SERVER_CONFIG_PATH="$PX4_GZ_SERVER_CONFIG"
 export PX4_GZ_MODELS="$PX4_GZ_DIR/models"
 export PX4_GZ_WORLDS="$PX4_GZ_DIR/worlds"
+export PX4_GZ_PLUGINS="$PX4_GZ_PLUGINS"
 
 echo "[BUNDLE] resource path: $GZ_SIM_RESOURCE_PATH"
+echo "[BUNDLE] plugin path:   $GZ_SIM_SYSTEM_PLUGIN_PATH"
+echo "[BUNDLE] server config: $GZ_SIM_SERVER_CONFIG_PATH"
 echo "[BUNDLE] launching PX4/Gazebo/MAVSDK mission..."
 set +e
 python3 launch_mothdrone.py

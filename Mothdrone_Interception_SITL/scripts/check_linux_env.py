@@ -22,6 +22,8 @@ def main() -> None:
     build_dir = px4_dir / "build" / "px4_sitl_default"
     px4_bin = build_dir / "bin" / "px4"
     gz_dir = px4_dir / "Tools" / "simulation" / "gz"
+    gz_plugins = build_dir / "src" / "modules" / "simulation" / "gz_plugins"
+    gz_server_config = px4_dir / "src" / "modules" / "simulation" / "gz_bridge" / "server.config"
     model_sdf = gz_dir / "models" / "standard_vtol" / "model.sdf"
     default_world = gz_dir / "worlds" / "default.sdf"
 
@@ -41,6 +43,14 @@ def main() -> None:
         fail(f"PX4 Gazebo default world missing: {default_world}")
     ok(f"PX4 default world: {default_world}")
 
+    if not gz_plugins.exists():
+        fail(f"PX4 Gazebo plugin directory missing: {gz_plugins}. Rebuild with: cd {px4_dir} && make px4_sitl_default")
+    ok(f"PX4 Gazebo plugins: {gz_plugins}")
+
+    if not gz_server_config.exists():
+        fail(f"PX4 Gazebo server config missing: {gz_server_config}. Rebuild with: cd {px4_dir} && make px4_sitl_default")
+    ok(f"PX4 Gazebo server config: {gz_server_config}")
+
     gz = shutil.which("gz")
     if not gz:
         fail("Gazebo executable `gz` not found. Install Gazebo Harmonic/Garden and ensure `gz sim` works.")
@@ -57,4 +67,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
