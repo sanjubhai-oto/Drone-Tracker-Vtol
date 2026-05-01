@@ -15,6 +15,7 @@ The repository now includes a complete two-VTOL Mothdrone SITL package with:
 - hunter-only breakaway and RTL
 - telemetry logging
 - static and live 3D trajectory visualisation
+- Ubuntu/PX4 pre-arm health waiting and retry diagnostics for `COMMAND_DENIED` arming failures
 
 ## Repository Layout
 

@@ -163,6 +163,7 @@ Edit `configs/mission_config.json` to change:
 | QGC not showing telemetry | Check firewall, ensure UDP 14550 is open |
 | Hunter not moving | Check offboard mode is enabled in PX4 params |
 | Target not moving | Ensure velocity setpoints are being sent |
+| `COMMAND_DENIED` during `arm()` | PX4 pre-arm checks were not ready yet. The controller now waits for local/global/home estimate health, disables RC-stick dependency for SITL with `COM_RC_IN_MODE=4`, enables SITL GPS-relaxed arming with `COM_ARM_WO_GPS=1`, and retries arming with health diagnostics. If it still fails, inspect `logs/target_px4.log` and `logs/hunter_px4.log` for the exact `Preflight Fail` line. |
 
 ## Algorithm Flow
 

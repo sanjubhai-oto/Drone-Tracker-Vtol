@@ -28,11 +28,13 @@ HUNTER_BREAKAWAY_ALTITUDE_M = 40.0
 
 try:
     from mavsdk import System
+    from mavsdk.action import ActionError
     from mavsdk.offboard import OffboardError, VelocityNedYaw
     MAVSDK_AVAILABLE = True
 except ImportError:
     MAVSDK_AVAILABLE = False
     System = None
+    ActionError = None
     OffboardError = None
     VelocityNedYaw = None
 
@@ -353,6 +355,14 @@ class MothdroneController:
             self._set_sitl_failsafe_profile(self.hunter, "hunter"),
             self._set_sitl_failsafe_profile(self.target, "target"),
         )
+        await asyncio.gather(
+            self._set_sitl_arming_profile(self.hunter, "hunter"),
+            self._set_sitl_arming_profile(self.target, "target"),
+        )
+        await asyncio.gather(
+            self._wait_for_prearm_health(self.hunter, "hunter", timeout_s=45.0),
+            self._wait_for_prearm_health(self.target, "target", timeout_s=45.0),
+        )
 
         print("[MISSION] Setting takeoff altitude on both VTOLs...")
         await asyncio.gather(
@@ -367,10 +377,10 @@ class MothdroneController:
         )
 
         print("[MISSION] Arming target first; hunter arms after target armed state is detected...")
-        await self.target.action.arm()
+        await self._arm_with_retry(self.target, "target", timeout_s=30.0)
         await self._wait_until_armed(self.target, "target", timeout_s=10.0)
         print("[MISSION] Target armed detected -> arming hunter now")
-        await self.hunter.action.arm()
+        await self._arm_with_retry(self.hunter, "hunter", timeout_s=30.0)
         await self._wait_until_armed(self.hunter, "hunter", timeout_s=10.0)
 
         await asyncio.sleep(0.5)
@@ -402,15 +412,106 @@ class MothdroneController:
             "COM_OF_LOSS_T": 10.0,
         }
         for name, value in int_params.items():
-            try:
-                await system.param.set_param_int(name, int(value))
-            except Exception as exc:
-                print(f"[MISSION] {role} SITL failsafe int param warning {name}={value}: {exc}")
+            await self._set_param_best_effort(system, role, name, value, as_int=True)
         for name, value in float_params.items():
-            try:
+            await self._set_param_best_effort(system, role, name, value, as_int=False)
+
+    async def _set_sitl_arming_profile(self, system: System, role: str) -> None:
+        """Relax simulator-only arming blockers that differ between PX4 builds."""
+        int_params = {
+            # Disable RC-stick dependency in SITL. Offboard setpoints are still required.
+            "COM_RC_IN_MODE": 4,
+            # Permit arming while simulated GPS/global estimate is still settling.
+            "COM_ARM_WO_GPS": 1,
+        }
+        for name, value in int_params.items():
+            await self._set_param_best_effort(system, role, name, value, as_int=True)
+
+    async def _set_param_best_effort(self, system: System, role: str, name: str, value: float, as_int: bool) -> None:
+        """Set PX4 params across versions where the same param may be int or float."""
+        try:
+            if as_int:
+                await system.param.set_param_int(name, int(value))
+            else:
                 await system.param.set_param_float(name, float(value))
+            return
+        except Exception as first_exc:
+            try:
+                if as_int:
+                    await system.param.set_param_float(name, float(value))
+                else:
+                    await system.param.set_param_int(name, int(value))
+                print(f"[MISSION] {role} param {name} accepted using fallback type")
+                return
+            except Exception as second_exc:
+                print(f"[MISSION] {role} param warning {name}={value}: {first_exc}; fallback: {second_exc}")
+
+    async def _wait_for_prearm_health(self, system: System, role: str, timeout_s: float) -> None:
+        """Wait for enough estimator health for PX4 SITL arming on slower Ubuntu machines."""
+        print(f"[MISSION] Waiting for {role} pre-arm health...")
+        deadline = time.monotonic() + timeout_s
+        last_print = 0.0
+        async for health in system.telemetry.health():
+            local_ok = bool(getattr(health, "is_local_position_ok", False))
+            global_ok = bool(getattr(health, "is_global_position_ok", False))
+            home_ok = bool(getattr(health, "is_home_position_ok", False))
+            gyro_ok = bool(getattr(health, "is_gyrometer_calibration_ok", True))
+            accel_ok = bool(getattr(health, "is_accelerometer_calibration_ok", True))
+            mag_ok = bool(getattr(health, "is_magnetometer_calibration_ok", True))
+            if local_ok and (global_ok or home_ok) and gyro_ok and accel_ok:
+                print(
+                    f"[MISSION] {role} pre-arm health ok "
+                    f"(local={local_ok} global={global_ok} home={home_ok} mag={mag_ok})"
+                )
+                return
+            now = time.monotonic()
+            if now - last_print > 3.0:
+                print(
+                    f"[MISSION] {role} health waiting: "
+                    f"local={local_ok} global={global_ok} home={home_ok} "
+                    f"gyro={gyro_ok} accel={accel_ok} mag={mag_ok}"
+                )
+                last_print = now
+            if now >= deadline:
+                print(
+                    f"[MISSION] {role} pre-arm health timeout; attempting arm with current health "
+                    f"(local={local_ok} global={global_ok} home={home_ok} gyro={gyro_ok} accel={accel_ok})"
+                )
+                return
+
+    async def _arm_with_retry(self, system: System, role: str, timeout_s: float) -> None:
+        """Retry arm while PX4 preflight checks settle instead of failing on first denial."""
+        deadline = time.monotonic() + timeout_s
+        attempt = 0
+        last_error = None
+        while time.monotonic() < deadline:
+            attempt += 1
+            try:
+                await system.action.arm()
+                print(f"[MISSION] {role} arm command accepted on attempt {attempt}")
+                return
             except Exception as exc:
-                print(f"[MISSION] {role} SITL failsafe float param warning {name}={value}: {exc}")
+                last_error = exc
+                print(f"[MISSION] {role} arm denied on attempt {attempt}: {exc}")
+                await self._print_health_once(system, role)
+                await asyncio.sleep(2.0)
+        raise RuntimeError(f"{role} arm failed after {timeout_s:.1f}s; last error: {last_error}")
+
+    async def _print_health_once(self, system: System, role: str) -> None:
+        try:
+            async for health in system.telemetry.health():
+                print(
+                    f"[MISSION] {role} health: "
+                    f"local={getattr(health, 'is_local_position_ok', False)} "
+                    f"global={getattr(health, 'is_global_position_ok', False)} "
+                    f"home={getattr(health, 'is_home_position_ok', False)} "
+                    f"gyro={getattr(health, 'is_gyrometer_calibration_ok', False)} "
+                    f"accel={getattr(health, 'is_accelerometer_calibration_ok', False)} "
+                    f"mag={getattr(health, 'is_magnetometer_calibration_ok', False)}"
+                )
+                return
+        except Exception as exc:
+            print(f"[MISSION] {role} health read warning: {exc}")
 
     async def _set_speed_profile(
         self,
@@ -433,10 +534,7 @@ class MothdroneController:
             ("MPC_ACC_HOR_MAX", 5.0),
             ("MPC_JERK_MAX", 8.0),
         ):
-            try:
-                await system.param.set_param_float(name, float(value))
-            except Exception as exc:
-                print(f"[MISSION] {role} param warning {name}={value}: {exc}")
+            await self._set_param_best_effort(system, role, name, value, as_int=False)
 
     async def _transition_to_multicopter(self, system: System, role: str) -> None:
         try:

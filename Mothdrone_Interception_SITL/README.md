@@ -12,6 +12,7 @@ Two-standard-VTOL PX4/Gazebo simulation for a Mothdrone-style demo:
 - at <= 25 m with vision-confirmation gate, hunter triggers the event
 - target receives a SITL-only motor-stop/kill command and falls/disarms
 - hunter holds/climbs, then hunter-only RTL/land
+- Ubuntu/PX4 builds with slower estimator startup are handled by pre-arm health waiting and arm retry diagnostics
 
 This package is for simulation only.
 
