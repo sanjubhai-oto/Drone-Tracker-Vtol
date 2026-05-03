@@ -31,6 +31,7 @@ The Mothdrone package includes:
 | `ROS2Humbel/` | ROS 2 Humble notes |
 | `Mothdrone_Interception_SITL/` | Full two-VTOL SITL demo package |
 | `X500_Gimbal_Tracker_SITL/` | Two `x500_gimbal` hunter/target SITL package |
+| `wavel/wavel swarm/` | Safe 5-drone Wavel swarm navigation, mesh comms, collision avoidance, object confirmation |
 
 ## Mothdrone Interception SITL
 
@@ -143,3 +144,27 @@ Open:
 ```text
 http://127.0.0.1:8790/live_trajectory.html
 ```
+
+## Wavel Swarm
+
+Run the safe Wavel swarm simulation:
+
+```bash
+cd "wavel/wavel swarm"
+chmod +x scripts/*.sh
+./scripts/run_simulated_swarm.sh
+```
+
+Live swarm UI:
+
+```bash
+python3 code/live_swarm_server.py
+```
+
+Open:
+
+```text
+http://127.0.0.1:8795/live_swarm.html
+```
+
+This package implements non-destructive object confirmation/tagging, not strike behavior.

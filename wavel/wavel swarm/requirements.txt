@@ -1,0 +1,5 @@
+# Pure simulation has no mandatory third-party dependency.
+# Optional future camera/object-inspection integration:
+# opencv-python
+# numpy
+

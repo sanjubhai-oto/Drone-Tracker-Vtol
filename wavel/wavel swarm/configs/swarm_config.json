@@ -1,0 +1,16 @@
+{
+  "drone_count": 5,
+  "cruise_speed_mps": 5.0,
+  "max_speed_mps": 7.0,
+  "min_separation_m": 6.0,
+  "avoidance_gain": 7.0,
+  "arrival_radius_m": 5.0,
+  "object_confirm_radius_m": 45.0,
+  "comms_range_m": 80.0,
+  "control_dt_s": 0.2,
+  "target_north_m": 120.0,
+  "target_east_m": 40.0,
+  "target_altitude_m": 18.0,
+  "vision_backend": "simulated_opencv_gate",
+  "detector_note": "RF-DETR/YOLO/OpenCV can be connected for non-destructive object confirmation only."
+}
